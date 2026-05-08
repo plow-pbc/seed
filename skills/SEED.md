@@ -8,28 +8,34 @@
 - POSIX shell, `git`. ^dep-shell
 - [[populate/SEED#Purpose]] — `/populate` skill spec. ^dep-populate
 - [[wrapup/SEED#Purpose]] — `/wrapup` skill spec. ^dep-wrapup
+- [[install-seed/SEED#Purpose]] — `/install-seed` skill spec. ^dep-install-seed
 
 ## Install
 
 The skills are installed via symlinks from `~/.claude/skills/`:
 
 ```bash
-ln -sfn ~/Hacking/seed/skills/populate ~/.claude/skills/populate
-ln -sfn ~/Hacking/seed/skills/wrapup   ~/.claude/skills/wrapup
+mkdir -p ~/.claude/skills/
+for s in populate wrapup install-seed; do
+  test -d ~/Hacking/seed/skills/$s || { echo "skill $s not yet shipped, skipping"; continue; }
+  test -e ~/.claude/skills/$s && { echo "refusing to overwrite ~/.claude/skills/$s"; exit 1; }
+  ln -sfn ~/Hacking/seed/skills/$s ~/.claude/skills/$s
+done
 ```
 
-Reload Claude Code; `/populate` and `/wrapup` become available.
+Reload Claude Code; `/populate`, `/wrapup`, and `/install-seed` become available.
 
 The installer MUST symlink (not copy). The installer MUST refuse to overwrite an existing real file at `~/.claude/skills/<skill>` (a stale symlink MAY be replaced).
 
 ## Verify
 
 ```bash
-test -L ~/.claude/skills/populate && readlink ~/.claude/skills/populate
-test -L ~/.claude/skills/wrapup   && readlink ~/.claude/skills/wrapup
+for s in populate wrapup install-seed; do
+  test -L ~/.claude/skills/$s && readlink ~/.claude/skills/$s
+done
 ```
 
-Both checks MUST pass and each symlink MUST resolve to `~/Hacking/seed/skills/<name>`.
+Each symlink MUST resolve to `~/Hacking/seed/skills/<name>`. Skills whose `SKILL.md` is not yet written are skipped at install time and are absent from this output.
 
 ## Claude Code Skill Format
 

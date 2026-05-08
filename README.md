@@ -14,11 +14,13 @@ In a world where software is free, the value will be the spec. SEED is a common,
 
 This repo is the base SEED. The convention itself lives in [`SEED.md`](SEED.md) — RFC 2119 normative, hierarchical, recursive (every folder gets one). Two flavors: install-flavor (deps + install + verify) for environment setup, spec-flavor (components + API + verify) for code-to-be-written. The dependency graph is the directory tree. Read top-down; build bottom-up.
 
-On top of the convention, this repo ships:
+On top of the convention, this repo ships three Claude Code skills:
 
-- `/populate` — a Claude Code skill that synthesizes `SEED.md` files from filesystem signals.
-- `/wrapup` — a Claude Code skill that updates `SEED.md` files at session end with what was learned.
-- An optional pre-commit hook that warns when staged code drifts from its sibling SEED.
+- `/populate` — synthesize `SEED.md` files from filesystem signals.
+- `/wrapup` — update `SEED.md` files at session end with what was learned.
+- `/install-seed` — read any SEED and install the software it describes (walks the dependency graph, runs install + verify with per-block confirmation).
+
+Plus an optional pre-commit hook that warns when staged code drifts from its sibling SEED, and a worked example: installing @karpathy's [autoresearch](https://github.com/karpathy/autoresearch) via three composed SEEDs (cuda → autoresearch → seed).
 
 Plain markdown. No DB. No embeddings. No runtime.
 
@@ -39,6 +41,8 @@ That's the install. The spec contains everything the agent needs.
 
 ### Use the reference skills
 
+Bootstrap (once):
+
 ```bash
 git clone https://github.com/plow-pbc/seed.git ~/Hacking/seed
 ```
@@ -47,7 +51,15 @@ Then in Claude Code:
 
 > Open `~/Hacking/seed/SEED.md` § 4 and follow it.
 
-Reload Claude Code. `/populate` and `/wrapup` are available everywhere.
+Reload Claude Code. `/populate`, `/wrapup`, and `/install-seed` are available everywhere.
+
+Try the worked example:
+
+```
+/install-seed ~/Hacking/seed/examples/autoresearch
+```
+
+It installs @karpathy's autoresearch by walking three composed SEEDs (cuda for the GPU runtime, then autoresearch itself), confirming each shell block before running.
 
 ## License
 

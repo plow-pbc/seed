@@ -108,11 +108,12 @@ A folder that has a `SEED.md` but no implementing code is **not** an unborn fold
 
 The seed repo's components are described in sub-folder SEEDs:
 
-- [[skills/SEED#Purpose]] — install-flavor index for the two skills shipped here. ^comp-skills
+- [[skills/SEED#Purpose]] — install-flavor index for the three skills shipped here. ^comp-skills
 - [[skills/populate/SEED#Purpose]] — spec-flavor contract for `/populate`. ^comp-populate
 - [[skills/wrapup/SEED#Purpose]] — spec-flavor contract for `/wrapup`. ^comp-wrapup
+- [[skills/install-seed/SEED#Purpose]] — spec-flavor contract for `/install-seed`. ^comp-install-seed
 - [[hooks/SEED#Purpose]] — install+spec hybrid for the optional pre-commit drift warning. ^comp-hooks
-- [[examples/SEED#Purpose]] — install-flavor; a worked example showing the convention applied recursively. ^comp-examples
+- [[examples/SEED#Purpose]] — install-flavor; a worked example installing @karpathy's autoresearch through three composed SEEDs. ^comp-examples
 
 A reader who walks `cat **/SEED.md` (or follows the wikilinks down) MUST end with a complete understanding of every shipped component.
 
@@ -138,7 +139,7 @@ test -d ~/Hacking/seed || git clone https://github.com/plow-pbc/seed.git ~/Hacki
 
 ```bash
 mkdir -p ~/.claude/skills/
-for s in populate wrapup; do
+for s in populate wrapup install-seed; do
   test -d ~/Hacking/seed/skills/$s || { echo "skill $s not yet shipped, skipping"; continue; }
   test -e ~/.claude/skills/$s && { echo "refusing to overwrite ~/.claude/skills/$s"; exit 1; }
   ln -sfn ~/Hacking/seed/skills/$s ~/.claude/skills/$s
@@ -189,6 +190,7 @@ A non-conforming repo MUST be diagnosed with the failing check named.
 - Demo video has not been recorded; the README's poster and mp4 paths are placeholders. ^o-demo
 - `/populate` skill is unimplemented — see [[skills/populate/SEED#Open]]. ^o-populate
 - `/wrapup` skill is unimplemented — see [[skills/wrapup/SEED#Open]]. ^o-wrapup
+- `/install-seed` skill is unimplemented — see [[skills/install-seed/SEED#Open]]. ^o-install-seed
 - Pre-commit hook is unimplemented — see [[hooks/SEED#Open]]. ^o-hooks
-- Worked example is unimplemented — see [[examples/SEED#Open]]. ^o-examples
+- Worked example platform coverage is Linux + NVIDIA only — see [[examples/SEED#Open]]. ^o-examples
 ^open

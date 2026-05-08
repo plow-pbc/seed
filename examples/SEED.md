@@ -1,43 +1,35 @@
 # Purpose
 
-> See [[../README#Purpose]] for the canonical purpose. This `SEED.md` is the install-flavor contract for the worked example: a small toy project that demonstrates the SEED convention applied recursively. Its job is to show, not tell — a fresh agent reading the example MUST be able to infer the convention by analogy.
+> See [[../README#Purpose]] for the canonical purpose. This `SEED.md` is the install-flavor index for the worked "hello world" example: a real-world install of @karpathy's [autoresearch](https://github.com/karpathy/autoresearch) (an autonomous LLM training experimentation loop) demonstrated through three composed SEEDs.
+
+The hello-world is intentionally non-trivial: it shows recursive composition. The autoresearch SEED depends on a sibling CUDA SEED (GPU runtime) and on the parent seed repo (which provides `/install-seed`). Reading the example top-down MUST be enough to install autoresearch from a fresh machine.
 
 ## Dependencies
 
-- A copy of the seed repo. ^dep-seed
+- [[autoresearch/SEED#Purpose]] — the autoresearch application SEED. ^dep-autoresearch
+- [[cuda/SEED#Purpose]] — the CUDA / NVIDIA runtime SEED (transitive, via autoresearch). ^dep-cuda
+- [[../SEED#Purpose]] — this seed repo (transitive; provides `/install-seed`). ^dep-seed
 
 ## Install
 
-The example is read-only documentation. To use it as a reference:
-
-```bash
-ls ~/Hacking/seed/examples/
-# Expect: README.md (with # SEED + ## Purpose), SEED.md, plus toy code arranged in sub-folders that each have their own SEED.md.
+```
+/install-seed ~/Hacking/seed/examples/autoresearch
 ```
 
-To run `/populate` against the example as a regression test:
-
-```bash
-cd ~/Hacking/seed/examples
-# Then in Claude Code: /populate -L 2
-# Expect: SEEDs already exist; /populate proposes minimal-or-no diff.
-```
+`/install-seed` walks the dependency graph: cuda first (driver + toolkit), then autoresearch (clone + uv + uv sync + prepare.py). Each shell block in each child SEED requires user confirmation per [[../skills/install-seed/SEED#API]].
 
 ## Verify
 
 ```bash
-test -f ~/Hacking/seed/examples/README.md
-test -f ~/Hacking/seed/examples/SEED.md
-grep -q '^# SEED' ~/Hacking/seed/examples/README.md
-grep -q '^## Purpose' ~/Hacking/seed/examples/README.md
-grep -q '^# Purpose' ~/Hacking/seed/examples/SEED.md
+nvidia-smi                                         # GPU detected, driver loaded
+ls ~/Hacking/autoresearch/                          # repo present
+ls ~/.cache/autoresearch/ | grep -E 'shard|tokenizer'    # data prepped
 ```
 
-All five checks MUST pass once the example is shipped.
+All three checks MUST succeed once the example is fully installed.
 
 ## Open
 
-- Example codebase not yet selected. RECOMMENDED: a tiny Python "todo list" CLI with one sub-folder for tests, so the recursive structure is exercised without overwhelming the reader. ^o-codebase
-- `examples/README.md` not yet written. ^o-readme
-- Toy code not yet written. ^o-code
+- The CUDA SEED targets Linux + a single discrete NVIDIA GPU only. macOS / AMD / Windows variants are deferred to forks; autoresearch's README lists notable forks for those platforms. ^o-platform
+- The autoresearch baseline training run (`uv run train.py`, ~5 min) is RECOMMENDED but slow; the example marks it as optional in [[autoresearch/SEED#Open]]. ^o-baseline-runtime
 ^open
