@@ -7,15 +7,15 @@ Give every folder in your hacking workspace a single durable file that captures 
 ^purp
 
 ## Dependencies
-- A POSIX shell, `git`, `gh` (GitHub CLI). ^dep-posix
+- A POSIX shell, `git`. ^dep-posix
 - Claude Code with `~/.claude/skills/` already a writable directory. ^dep-claude
 - (Optional) Obsidian, with the vault root opened at the highest folder containing a `SEED.md`. ^dep-obsidian
 
 ## Objects
 - **Schema** ([[schema/SEED]]) — the `SEED.md` format spec. The single source of truth for what a conformant seed looks like. ^obj-schema
-- **Skills** ([[skills/SEED]]) — index of the skills shipped here. ^obj-skills
-- **Hooks** ([[hooks/SEED]]) — optional opt-in pre-commit drift warning. ^obj-hooks
-- **Examples** ([[examples/SEED]]) — worked example. ^obj-examples
+- **Skills** ([[skills/SEED]]) — index of the skills shipped here. *(Arrives in Phase 2 (`/populate`) and Phase 3 (`/wrapup`).)* ^obj-skills
+- **Hooks** ([[hooks/SEED]]) — optional opt-in pre-commit drift warning. *(Arrives in Phase 5.)* ^obj-hooks
+- **Examples** ([[examples/SEED]]) — worked example. *(Arrives in Phase 4.)* ^obj-examples
 
 ## Actions
 - **Install** — clone this repo and symlink the skill directories into `~/.claude/skills/` per `## Verify` below. ^act-install
@@ -78,6 +78,6 @@ Then in Claude: `/populate -L 2`. Expect: a proposed diff creating `/tmp/seed-te
 
 ## Sub-trees
 - [[schema/SEED]] — the `SEED.md` format spec.
-- [[skills/SEED]] — `/populate` and `/wrapup` SKILL.md files.
-- [[hooks/SEED]] — opt-in pre-commit drift warning.
-- [[examples/SEED]] — worked example: this repo seeded by itself.
+- [[skills/SEED]] — `/populate` and `/wrapup` SKILL.md files. *(Arrives in Phase 2 + Phase 3.)*
+- [[hooks/SEED]] — opt-in pre-commit drift warning. *(Arrives in Phase 5.)*
+- [[examples/SEED]] — worked example: this repo seeded by itself. *(Arrives in Phase 4.)*
