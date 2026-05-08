@@ -2,10 +2,7 @@
 
 > See [[README#Purpose]] for the canonical purpose. This `SEED.md` is the complete RFC 2119 contract: an AI agent or engineer reading this file (and the sub-folder SEEDs it links to) MUST be able to (re)build the SEED convention, the `/populate` and `/wrapup` skills, and the optional pre-commit hook from scratch.
 
-# SEED — Specification
-
-**Status:** v0 (initial)
-**Date:** 2026-05-08
+**Status:** v0 (initial) &middot; **Date:** 2026-05-08
 
 ## Normative Language
 
@@ -54,26 +51,28 @@ A `SEED.md` MUST open with a `# Purpose` H1 that wikilinks to the closest siblin
 
 After the `# Purpose` H1, the body of `SEED.md` MUST be one of two flavors (§ 2.3.1, § 2.3.2). It MUST NOT mix flavors at the same level; a folder that needs both install and spec content SHOULD split into sub-folders.
 
+A `SEED.md` MUST contain exactly one H1 — the opening `# Purpose`. All structural headings below MUST be H2 (`##`) or deeper. This avoids markdown-linter conflicts and keeps the `# Purpose` back-reference anchor unambiguous.
+
 #### 2.3.1 Install-flavor
 
-Used for environment-setup folders, index folders that mostly enumerate dependencies, and worked examples. The body MUST contain:
+Used for environment-setup folders, index folders that mostly enumerate dependencies, and worked examples. The body MUST contain (in this order):
 
 - `## Dependencies` — bullet list of external (system, package) and internal (sub-folder SEED) dependencies, with block IDs.
 - `## Install` — step-by-step commands.
 - `## Verify` — runnable smoke checks.
 
-The body MAY contain `## Open` (loose ends, deferred items).
+The body MAY contain `## Open` (loose ends, deferred items) and additional folder-specific H2 sections that document binding contracts the folder owns. Additional sections MUST appear after the three required sections.
 
 #### 2.3.2 Spec-flavor
 
-Used for folders that contain code (or code-to-be-written). The body MUST contain:
+Used for folders that contain code (or code-to-be-written). The body MUST contain (in this order):
 
 - `## Components` — the named entities (functions, classes, files), with block IDs.
 - `## API` — public contract (signatures, inputs, outputs, errors). RFC 2119 throughout.
 - `## Install` or `## Build` — how to wire the component into a working install.
 - `## Verify` — conformance tests (runnable commands + expected outcomes).
 
-The body MAY contain `## Non-Goals`, `## Open`.
+The body MAY contain `## Non-Goals`, `## Open`, and additional folder-specific H2 sections that document binding contracts the folder owns. Additional sections MUST appear after the four required sections.
 
 A spec-flavor `SEED.md` MUST be sufficient (in conjunction with the SEEDs it depends on) to write the software from scratch.
 
@@ -94,6 +93,8 @@ Cross-references between SEEDs MUST use Obsidian-style wikilinks:
 - README purpose back-reference: `[[<relative-path>/README#Purpose]]`.
 
 A `SEED.md` MUST NOT use bare paths or HTML anchors for cross-references.
+
+Heading anchors MUST use the **literal full heading text**, including any leading section numbers. Example: `[[SEED#2.6 Hierarchical Invariant]]`, NOT `[[SEED#2.6]]`. When a stable cross-reference to a numbered section is needed, a block-level anchor (`#^id`) is RECOMMENDED — it survives heading-text edits.
 
 ### 2.6 Hierarchical Invariant
 
