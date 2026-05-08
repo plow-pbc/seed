@@ -12,10 +12,10 @@ Give every folder in your hacking workspace a single durable file that captures 
 - (Optional) Obsidian, with the vault root opened at the highest folder containing a `SEED.md`. ^dep-obsidian
 
 ## Objects
-- **[[schema/SEED]]** — the `SEED.md` format spec. The single source of truth for what a conformant seed looks like. ^obj-schema
-- **[[skills/SEED]]** — index of the skills shipped here. ^obj-skills
-- **[[hooks/SEED]]** — optional opt-in pre-commit drift warning. ^obj-hooks
-- **[[examples/SEED]]** — worked example. ^obj-examples
+- **Schema** ([[schema/SEED]]) — the `SEED.md` format spec. The single source of truth for what a conformant seed looks like. ^obj-schema
+- **Skills** ([[skills/SEED]]) — index of the skills shipped here. ^obj-skills
+- **Hooks** ([[hooks/SEED]]) — optional opt-in pre-commit drift warning. ^obj-hooks
+- **Examples** ([[examples/SEED]]) — worked example. ^obj-examples
 
 ## Actions
 - **Install** — clone this repo and symlink the skill directories into `~/.claude/skills/` per `## Verify` below. ^act-install

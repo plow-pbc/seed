@@ -19,7 +19,7 @@ Provide a single, recursively-readable convention for per-folder mental-model fi
 
 A `SEED.md` is conformant if and only if (a) sections appear in the canonical order, (b) only listed section names are used, (c) every nested `SEED.md` is linked from its parent's `## Sub-trees`.
 
-Run `/populate` (after seed is installed; see [[../SEED]]'s `## Verify`) to regenerate from filesystem signals and diff against the existing version.
+Run `/populate` (after seed is installed; see the root `SEED.md`'s `## Verify` section) to regenerate from filesystem signals and diff against the existing version.
 
 **Canonical template** — section order is fixed: `Purpose → Dependencies → Objects → Actions → Verify → Tenets → Open → Sub-trees`. Skip what doesn't apply; never reorder. Only listed section names are used.
 
