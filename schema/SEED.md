@@ -33,7 +33,7 @@ Run `/populate` (after seed is installed; see the root `SEED.md`'s `## Verify` s
 ^purp
 
 ## Dependencies
-- [[../shared/SEED]] — what it provides. ^dep-shared
+- [[shared/SEED]] — what it provides. ^dep-shared
 - External: PostgreSQL 16, OPENAI_API_KEY in env.
 
 ## Objects

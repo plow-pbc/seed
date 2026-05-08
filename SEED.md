@@ -36,9 +36,14 @@ Give every folder in your hacking workspace a single durable file that captures 
 # 2. Make sure ~/.claude/skills/ exists.
 mkdir -p ~/.claude/skills
 
-# 3. Refuse to overwrite existing non-symlink targets.
+# 3. For each skill: verify source dir exists (skill has shipped) AND refuse to overwrite real files.
 for s in wrapup populate; do
+  src=~/Hacking/seed/skills/$s
   t=~/.claude/skills/$s
+  if [ ! -d "$src" ]; then
+    echo "Error: $src does not exist — that skill hasn't shipped yet. See SEED.md '## Sub-trees' for phase status." >&2
+    exit 1
+  fi
   if [ -e "$t" ] && [ ! -L "$t" ]; then
     echo "Refusing to overwrite real file at $t — move it aside and re-run." >&2
     exit 1
@@ -50,11 +55,11 @@ ln -sfn ~/Hacking/seed/skills/wrapup    ~/.claude/skills/wrapup
 ln -sfn ~/Hacking/seed/skills/populate  ~/.claude/skills/populate
 ```
 
-**Verify install succeeded:**
+**Verify install succeeded** (`test -e` follows symlinks — fails on dangling):
 
 ```bash
-test -L ~/.claude/skills/wrapup    && echo "wrapup OK"
-test -L ~/.claude/skills/populate  && echo "populate OK"
+test -e ~/.claude/skills/wrapup/SKILL.md    && echo "wrapup OK"
+test -e ~/.claude/skills/populate/SKILL.md  && echo "populate OK"
 ```
 
 Both should print `OK`. After this, **start a new Claude Code session** — skills load at session start.
