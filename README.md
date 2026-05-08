@@ -1,71 +1,44 @@
-# seed
+# SEED
 
-> Recursively-readable mental-model files for code repos. One folder,
-> one structured contract. Filesystem becomes a graph.
+> Recursively-readable mental-model files for code repos. Every folder gets a structured contract; the filesystem becomes a graph of meaning that any AI agent or new collaborator can read top-down.
 
-This repo ships two Claude Code skills (`/populate`, `/wrapup`) that
-read and write to the SEED convention. Pure markdown. No runtime, no
-DB, no embeddings.
+<!-- TODO: record demo. Poster + mp4 should live in .github/media/ -->
 
-## Why
+[![SEED demo poster](.github/media/seed-demo-poster.jpg)](.github/media/seed-demo.mp4)
 
-Most folders need a few key facts an agent or new collaborator must
-land on: what's here, how to verify it works, what depends on it,
-what's open. The `## SEED` section captures those with a fixed shape
-so the answers are always in the same place.
+_In the demo, an agent runs `/populate` on a fresh repo, walks the tree, and writes a `SEED.md` in each participating folder. A second agent then reads the tree top-down (`cat **/SEED.md` + follow links) and reconstructs the project from those files alone. Recursive readability is the conformance criterion._
 
-## Tenets
+## Purpose
 
-- **No runtime, no DB, no embeddings.** Plain markdown.
-- **Manual `/wrapup` only.** Human chooses when to crystallize.
-- **No coupling with personal dotfiles.** Standalone, forkable.
+Every code folder needs a few facts an agent or new collaborator must land on: what's here, how to verify it works, what depends on it, what's open. SEED captures those with a fixed shape so the answers always live in the same place — and the same shape composes recursively up the tree.
 
-## Dependencies
+This repo ships:
 
-- POSIX shell, `git`.
-- Claude Code with `~/.claude/skills/` writable.
-- *(Optional)* Obsidian.
+- The **SEED convention** itself ([`SEED.md`](SEED.md)) — RFC 2119 contract, sufficient to (re)build the toolkit.
+- The **`/populate` skill** — synthesizes `SEED.md` files from filesystem signals.
+- The **`/wrapup` skill** — at session-end, updates `SEED.md` files with what was learned.
+- An **optional pre-commit hook** that warns when staged code drifts from its sibling SEED.
+
+Plain markdown. No runtime, no DB, no embeddings.
 
 ## Install
 
+### Option 1 — Build it from the spec
+
+Tell your favorite coding agent:
+
+> Implement SEED according to the spec in
+> https://github.com/plow-pbc/seed/blob/main/SEED.md
+
+### Option 2 — Use the reference skills
+
 In any directory, paste into Claude Code:
 
-> "Install `plow-pbc/seed`. Read `~/Hacking/seed/README.md`'s
-> `## SEED > ### Verify` section and follow it."
+> Install `plow-pbc/seed`. If `~/Hacking/seed/` does not exist, clone
+> `https://github.com/plow-pbc/seed.git` there. Then open
+> `~/Hacking/seed/SEED.md` § 4 (Install Protocol) and follow it.
 
-Start a new Claude Code session to load skills.
-
-## SEED
-
-The present-tense contract for *this* folder. Read this section
-recursively across the tree to reconstruct the project.
-
-### Objects
-- **README.md** — project overview + SEED contract + roadmap. ^obj-readme
-- **LICENSE** — MIT. ^obj-license
-
-### Actions
-- **Read top-down** — `cat */README.md` and follow `### Sub-trees`
-  links downward. ^act-read
-
-### Verify
-- `head -1 README.md` is `# seed`.
-- README contains `## SEED` with `### Objects`, `### Actions`,
-  `### Verify`, `### Sub-trees` subsections.
-- All wikilinks in `### Sub-trees` point at folders that exist.
-^verify
-
-### Sub-trees
-*(none yet — Phase 2+ will add `skills/`, `hooks/`, `examples/`.)*
-
-## Roadmap
-
-- [x] Phase 0: bootstrap (LICENSE, README, .gitignore).
-- [x] Phase 1: README with `## SEED` section.
-- [ ] Phase 2: `/populate` skill.
-- [ ] Phase 3: `/wrapup` skill.
-- [ ] Phase 4: examples + install verify.
-- [ ] Phase 5: pre-commit drift hook.
+Start a new Claude Code session to load skills. `/populate` and `/wrapup` then become available everywhere.
 
 ## License
 
