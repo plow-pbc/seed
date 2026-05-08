@@ -1,0 +1,10 @@
+# OS / editor cruft
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Tmp test sandboxes for hooks/skills
+tmp/
+sandbox/
