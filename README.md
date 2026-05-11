@@ -20,7 +20,7 @@ Every SEED has the same shape:
 - `## Objects` — descriptive; named entities in the running system.
 - `## Actions` — descriptive; verbs performed BY objects.
 - `## Verify` — assertional; read-only checks (may use ephemeral test resources; must clean them up).
-- `## Feedback` — optional opt-in; declares where install reports go (plow's hub by default; per-SEED HTTPS override or explicit `(none)` to disable). Absent = no reports.
+- `## Feedback` — optional opt-in; SEEDs that include `## Feedback\n\n(default)` send anonymous install reports to plow's hub. Absent = no reports.
 
 Plus optional `## Open` (known incomplete) and `## Non-Goals` (explicit scope). Plain markdown. No DB. No embeddings. No runtime.
 

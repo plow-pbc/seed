@@ -79,7 +79,6 @@ The convention's named entities — the things that exist when a SEED-conforming
 - An OPTIONAL H2 section that declares the destination for install reports. ^obj-feedback
 - Three legal body forms:
   - `(default)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified). The body is intentionally a single compact token so authors and generators don't have to match a prose sentence byte-for-byte. ^obj-feedback-default
-  - An **HTTPS URL** on its own line (e.g. `https://feedback.acme.internal/seed-reports`) — agent uses that URL (for company-internal SEEDs reporting to private endpoints). Non-HTTPS destinations MUST be rejected by the agent (no plaintext transport for machine-linked reports). ^obj-feedback-custom
   - `(none)` — feedback explicitly disabled for this SEED. ^obj-feedback-none
 - **Absent `## Feedback` means feedback is OFF for this SEED.** No reports are sent. Authors who want feedback MUST add an explicit `## Feedback` section with one of the three legal body forms. (Privacy-by-default: a SEED predating this convention does not silently become a reporting SEED when an agent rolls forward.)
 - The agent's runtime behavior when this section is present is specified in [[#Feedback is reported]] under `## Actions`.
@@ -147,24 +146,14 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 1. Body is `(none)` → no report.
 2. Body is `(default)` → agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified).
-3. Body is a single line parseable as an HTTPS URL → agent uses that URL.
-4. Any other body (HTTP URL, malformed text, multi-line body, etc.) → no report. The agent SHOULD log a one-line warning to stderr.
+3. Any other body → no report. The agent SHOULD log a one-line warning to stderr.
 
-#### Consent — opt-out with **per-destination** banner
+v0 has exactly one destination (plow's hub). Custom destinations are deferred — they introduce per-destination consent, per-destination machine-ID scoping, and HTTPS validation that nothing in v0 needs.
 
-- Before the first report to each distinct destination URL on a machine, the agent MUST display a one-time banner naming **that** destination, the fields collected, and the disable instructions.
-- After the banner is acknowledged for a destination, the agent records the acknowledgement keyed by destination URL in `~/.config/seed/feedback.json`. A different destination on the same machine MUST re-prompt — consent to one URL is not consent to another. Example state file:
+#### Consent — opt-out with one-time banner
 
-  ```json
-  {
-    "enabled": true,
-    "destinations": {
-      "https://plow.io/seed/feedback":            "2026-05-11T20:30:00Z",
-      "https://feedback.acme.internal/seed-reports": "2026-05-11T21:00:00Z"
-    }
-  }
-  ```
-
+- Before the first report on a machine, the agent MUST display a one-time banner naming the destination, the fields collected, and the disable instructions.
+- After the banner is acknowledged, the agent records the acknowledgement in `~/.config/seed/feedback.json` as `{"enabled": true, "banner_shown": "<RFC3339-ts>"}`. Subsequent reports skip the banner.
 - Disable mechanisms (any one suppresses sending):
   - Env var `SEED_FEEDBACK=off` for the current shell session.
   - `~/.config/seed/feedback.json` containing `{"enabled": false}` — disables globally for this machine.
@@ -174,12 +163,12 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 - A markdown document with YAML frontmatter, GitHub-issue-shaped. Exactly these fields, no body: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`.
 - **`seed_url`** MUST be the canonical repo URL with **userinfo, query, and fragment components stripped** (e.g., `https://github.com/foo/bar.git`, not `https://user:token@github.com/foo/bar.git?ref=branch#fragment`). If the install URL contains credentials, the agent MUST strip them before recording. Credential-bearing install URLs MUST NOT be transmitted in any form to the feedback endpoint.
-- **`anon_machine_id`** is the first 16 hex chars of `sha256(hostname + per_machine_salt + destination_url)`. The salt is generated on first run and stored locally in `~/.config/seed/machine-id`; wiping it rotates the ID across all destinations. Including the destination URL in the hash input ensures plow's hub and any private endpoint see different IDs from the same machine — they cannot cross-correlate users.
+- **`anon_machine_id`** is the first 16 hex chars of `sha256(hostname + per_machine_salt)`. The salt is generated on first run and stored locally in `~/.config/seed/machine-id`; wiping it rotates the ID.
 - The agent MUST NOT collect or transmit: paths, env vars, hostnames, shell output, stack traces, free-form notes, IP addresses (beyond what HTTP unavoidably reveals), or any PII. v0 has **no free-form body** — rich failure context belongs in a GitHub issue against the SEED's repo, not the anonymous feedback report.
 
 #### Failure modes
 
-- Feedback failures (network, 4xx/5xx, timeout, malformed body, non-HTTPS URL) MUST be silently dropped.
+- Feedback failures (network, 4xx/5xx, timeout, malformed body) MUST be silently dropped.
 - Reporting failures MUST NOT propagate to the install outcome. A user whose install succeeded but whose report failed to transmit MUST see a successful install.
 - No retry queue or offline buffering in v0. Lost reports are lost.
 
@@ -187,25 +176,25 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 The conformance checks below are runnable from the repo root. Each command MUST exit zero.
 
-The conformance checks below extract H1s and H2s using awk so that ``` fenced code blocks (including the ones in this section) are skipped — the spec is allowed to contain literal `## Section` and `# Section` strings inside code blocks without breaking its own validator.
+The conformance checks below extract H1s and H2s using awk so that fenced code blocks (including the ones in this section) are skipped — the spec is allowed to contain literal `## Section` and `# Section` strings inside code blocks without breaking its own validator. The fence-toggle regex `/^ {0,3}```/` matches CommonMark fences with 0–3 leading spaces of indentation.
 
 README contains `## Purpose` (the back-reference target; H1 is not constrained):
 
 ```bash
-awk '/^```/{f=!f; next} !f && /^## /' README.md | grep -qx '## Purpose'
+awk '/^ {0,3}```/{f=!f; next} !f && /^## /' README.md | grep -qx '## Purpose'
 ```
 
 `SEED.md` has exactly one H1 outside fenced code blocks, and it is `# Purpose`:
 
 ```bash
-test "$(awk '/^```/{f=!f; next} !f && /^# [^#]/' SEED.md | wc -l)" -eq 1
-test "$(awk '/^```/{f=!f; next} !f && /^# [^#]/' SEED.md)" = "# Purpose"
+test "$(awk '/^ {0,3}```/{f=!f; next} !f && /^# [^#]/' SEED.md | wc -l)" -eq 1
+test "$(awk '/^ {0,3}```/{f=!f; next} !f && /^# [^#]/' SEED.md)" = "# Purpose"
 ```
 
 This `SEED.md`'s full H2 sequence (excluding any inside fenced code blocks) matches the canonical order for a root SEED that opts into feedback:
 
 ```bash
-diff <(awk '/^```/{f=!f; next} !f && /^## /' SEED.md) \
+diff <(awk '/^ {0,3}```/{f=!f; next} !f && /^## /' SEED.md) \
      <(printf '## Normative Language\n## Dependencies\n## Objects\n## Actions\n## Verify\n## Feedback\n## Open\n## Non-Goals\n')
 ```
 
@@ -225,8 +214,8 @@ canonical='## Normative Language
 
 fail=0
 for f in $(find . -name 'SEED.md' -not -path './.git/*'); do
-  h1=$(awk '/^```/{f=!f; next} !f && /^# [^#]/' "$f")
-  h2=$(awk '/^```/{f=!f; next} !f && /^## /' "$f")
+  h1=$(awk '/^ {0,3}```/{f=!f; next} !f && /^# [^#]/' "$f")
+  h2=$(awk '/^ {0,3}```/{f=!f; next} !f && /^## /' "$f")
   test "$(echo "$h1" | wc -l)" -eq 1 && test "$h1" = "# Purpose" \
     || { echo "FAIL H1 not exactly '# Purpose': $f"; fail=1; continue; }
   head -3 "$f" | grep -q 'README#Purpose' \
