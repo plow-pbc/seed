@@ -31,13 +31,15 @@ Tell any AI agent:
 
 > Install `git@github.com:plow-pbc/seed.git`
 
-That's it. The agent clones the URL, reads `SEED.md`, walks dependencies recursively (confirming each shell block), and runs verify.
+That's it. The agent clones the URL, reads `SEED.md`, and runs Verify — which is read-only and just confirms the convention is structurally sound. This repo ships no installable software; it ships the convention.
 
-Try the worked example after:
+## Hello world
 
-> Install the autoresearch example from `git@github.com:plow-pbc/seed.git`
+The worked example lives in its own repo: **[plow-pbc/seed-autoresearch](https://github.com/plow-pbc/seed-autoresearch)**. It installs @karpathy's [autoresearch](https://github.com/karpathy/autoresearch) on a Linux + NVIDIA machine via two composed SEEDs (cuda → autoresearch):
 
-It installs @karpathy's autoresearch via two composed SEEDs (cuda → autoresearch).
+> Install `git@github.com:plow-pbc/seed-autoresearch.git`
+
+Reading both repos side-by-side is the fastest way to understand the convention: this repo *defines* it, that repo *uses* it.
 
 ## License
 
