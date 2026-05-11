@@ -27,8 +27,8 @@ The convention's named entities — the things that exist when a SEED-conforming
 ### README.md
 
 - A markdown file at the root of a SEED-participating folder. ^obj-readme
-- MUST contain `# SEED` as H1.
-- MUST contain a `## Purpose` H2 section (marketing-readable prose).
+- MUST contain a `## Purpose` H2 section (marketing-readable prose). The `Purpose` anchor is the canonical back-reference target from `SEED.md`.
+- MAY have any H1 (the project's natural name, `# SEED` for SEED-defining repos, etc.). The H1 is not normatively constrained — only `## Purpose` is.
 - MAY contain additional H2 sections (`## Install`, `## License`, demo video block).
 - The repo root MUST have one. Sub-folders MAY have one; their purpose is otherwise inherited from the closest ancestor README.
 
@@ -43,7 +43,12 @@ The convention's named entities — the things that exist when a SEED-conforming
 ### Dependencies section
 
 - Procedural; lists everything that MUST exist before this SEED's `## Verify` passes, in install order. ^obj-deps
-- Contains: sub-SEED wikilinks, external system requirements, external repo clones, repo setup commands.
+- Contains a mix of:
+  - **Sub-SEED wikilinks** (`[[<child>/SEED#Purpose]]`) — for SEEDs in the same repo. Installed by walking the wikilink to the sub-folder. ^obj-deps-wikilink
+  - **External SEED URLs** (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — for SEEDs in separate repos. Installed by treating the URL as a fresh install target (clone, read its `SEED.md`, recurse). ^obj-deps-external
+  - **External system requirements** — system packages, language runtimes, disk, sudo. Surfaced to the user; the SEED MAY provide install commands, but MUST NOT assume the agent can run them without confirmation.
+  - **External non-SEED repo clones** — code from a different git URL that is NOT itself a SEED.
+  - **Repo setup commands** — `uv sync`, `prepare.py`, build steps, etc.
 - MAY be empty (heading MUST exist; body MAY be `(none)`).
 - MAY use H3 sub-sections to group related install steps.
 - All shell blocks MUST be displayed to the user and explicitly confirmed before execution.
@@ -64,9 +69,9 @@ The convention's named entities — the things that exist when a SEED-conforming
 ### Verify section
 
 - Assertional; read-only checks that the install worked. ^obj-verify
-- MUST NOT mutate state produced by `## Dependencies`.
+- Verify is **normatively read-only on installed state** — an authoring contract: the SEED author MUST NOT put state-mutating commands here.
 - MAY create ephemeral test resources (containers, sandboxes, digital twins); MUST clean them up before exit.
-- Shell blocks do NOT require user confirmation (read-only by spec).
+- Shell blocks MUST be displayed to the user and explicitly confirmed before execution. The agent cannot prove that an author actually honored the read-only contract from the source — confirmation is the only gate that holds for both authoring mistakes and malicious SEEDs.
 - Block IDs use `^v-<slug>`.
 
 ### Wikilinks
@@ -99,51 +104,68 @@ The verbs performed BY the Objects above.
 - An agent installs a SEED at `<url>` by: ^act-install
   1. Cloning (or fetching) `<url>` to `$REPO_ROOT` (agent's choice of location).
   2. Reading `<repo>/SEED.md`.
-  3. For each `[[<child>/SEED#Purpose]]` wikilink in `## Dependencies`, recursively installing the child SEED first.
+  3. For each SEED dependency in `## Dependencies` — either a `[[<child>/SEED#Purpose]]` wikilink (sub-folder SEED in the same repo) or an external SEED URL (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — recursively installing that SEED first by repeating this procedure against it.
   4. Executing every shell block under `## Dependencies` (user-confirmed per block).
-  5. Executing `## Verify`.
+  5. Executing `## Verify` (user-confirmed per block).
 - Order: leaves-first, root-last.
 
 ### SEED is verified
 
-- An agent runs the shell blocks under `## Verify`. ^act-verify
+- An agent runs the shell blocks under `## Verify` with the same per-block confirmation gate used for `## Dependencies`. ^act-verify
 - All blocks MUST exit zero for the SEED to be considered installed.
-- Verify is read-only and idempotent; the agent MAY run it any time, including BEFORE trusting a fresh install.
+- Verify is normatively read-only and idempotent (an authoring contract). The agent has no way to prove read-only-ness from the source, so confirmation is required even on re-verification.
 
 ### SEED is trusted
 
-- The agent MUST treat `## Dependencies` as high-trust (executes arbitrary shell). ^act-trust
-- The agent MUST treat `## Objects`, `## Actions`, `## Verify` as low-trust (no side effects on installed state).
-- This trust boundary is why Verify is read-only by spec: it remains a safe re-runnable check even when the installed state is suspect.
+- The agent MUST treat all repo-supplied shell (`## Dependencies` and `## Verify`) as high-trust input requiring per-block user confirmation. ^act-trust
+- The agent MUST treat `## Objects` and `## Actions` as low-trust (descriptive only; no side effects).
+- The read-only contract on `## Verify` is an authoring obligation, not a basis for the agent to skip confirmation. A malicious or mistaken SEED author could put mutating shell in Verify; the confirmation gate is the only invariant the agent can enforce from outside the source.
 
 ## Verify
 
-The conformance test for this `SEED.md`:
+The conformance checks below are runnable from the repo root. Each command MUST exit zero.
+
+The README must contain a `## Purpose` H2 (the back-reference target). The H1 is not constrained.
 
 ```bash
-test "$(head -1 README.md)" = "# SEED"
 grep -q '^## Purpose' README.md
-grep -q '^# Purpose' SEED.md
-grep -q '^## Normative Language' SEED.md
-grep -qE '^## Dependencies$' SEED.md
-grep -qE '^## Objects$' SEED.md
-grep -qE '^## Actions$' SEED.md
-grep -qE '^## Verify' SEED.md
 ```
 
-All eight checks MUST pass.
-
-The full tree conformance (every `SEED.md` in this repo):
+`SEED.md` must have exactly one H1, and that H1 must be `# Purpose`. (Counts of `^# ` lines and the literal H1 value.)
 
 ```bash
+test "$(grep -c '^# [^#]' SEED.md)" -eq 1
+test "$(grep '^# [^#]' SEED.md)" = "# Purpose"
+```
+
+The root SEED declares RFC 2119:
+
+```bash
+grep -q '^## Normative Language' SEED.md
+```
+
+Required H2 sections appear in the spec-mandated order:
+
+```bash
+diff <(grep -E '^## (Dependencies|Objects|Actions|Verify)$' SEED.md) \
+     <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n')
+```
+
+All five checks MUST exit zero.
+
+The full tree conformance (every `SEED.md` in this repo, including sub-folder SEEDs that inherit RFC 2119 from the root):
+
+```bash
+fail=0
 for f in $(find . -name 'SEED.md' -not -path './.git/*'); do
-  head -3 "$f" | grep -q 'README#Purpose' || { echo "FAIL no back-ref: $f"; exit 1; }
-  grep -q '^# Purpose' "$f" || { echo "FAIL no Purpose H1: $f"; exit 1; }
-  for sec in Dependencies Objects Actions Verify; do
-    grep -q "^## $sec" "$f" || { echo "FAIL no ## $sec: $f"; exit 1; }
-  done
+  test "$(grep -c '^# [^#]' "$f")" -eq 1       || { echo "FAIL multiple H1: $f"; fail=1; continue; }
+  test "$(grep '^# [^#]' "$f")" = "# Purpose"  || { echo "FAIL H1 not '# Purpose': $f"; fail=1; continue; }
+  head -3 "$f" | grep -q 'README#Purpose'      || { echo "FAIL no README#Purpose back-ref: $f"; fail=1; continue; }
+  diff <(grep -E '^## (Dependencies|Objects|Actions|Verify)$' "$f") \
+       <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
+       || { echo "FAIL required H2s not in order: $f"; fail=1; continue; }
 done
-echo "tree conforms"
+test "$fail" = "0" && echo "tree conforms"
 ```
 
 All `SEED.md` files in the tree MUST pass.
@@ -160,6 +182,6 @@ All `SEED.md` files in the tree MUST pass.
 - No embeddings, vector search, or DB.
 - No multi-user collaboration; personal-use shape only.
 - No backwards-compat migration tooling.
-- No support for non-git distribution (tarballs, mirrors). HTTPS git URLs only.
+- No support for non-git distribution (tarballs, mirrors). Both SSH (`git@host:...`) and HTTPS (`https://...`) git URLs are valid install URLs; the agent picks the transport.
 - No version-conflict resolution across SEEDs.
 - No `/populate`, `/wrapup`, `/install-seed`, or pre-commit hook in v0.

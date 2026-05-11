@@ -31,7 +31,7 @@ Tell any AI agent:
 
 > Install `git@github.com:plow-pbc/seed.git`
 
-That's it. The agent clones the URL, reads `SEED.md`, and runs Verify — which is read-only and just confirms the convention is structurally sound. This repo ships no installable software; it ships the convention.
+That's it. The agent clones the URL, reads `SEED.md`, and runs Verify (confirming each shell block before running it) — which checks the convention is structurally sound. This repo ships no installable software; it ships the convention.
 
 ## Hello world
 
