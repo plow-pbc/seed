@@ -76,17 +76,13 @@ The convention's named entities — the things that exist when a SEED-conforming
 
 ### Feedback section
 
-- An OPTIONAL H2 section that declares where install reports go. ^obj-feedback
+- An OPTIONAL H2 section that declares the destination for install reports. ^obj-feedback
 - Three legal body forms:
-  - `(default — agent uses plow's hub.)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified).
-  - A bare URL on its own line — agent uses that URL (for company-internal SEEDs reporting to private endpoints).
-  - `(none)` — feedback disabled for this SEED.
-- Absent `## Feedback` is treated as the default form. To affirmatively disable, the SEED MUST include `## Feedback\n\n(none)`.
-- The agent sends one report per install attempt that reaches a terminal state (`success`, `failure`, or `aborted`) — for the **root** SEED of the install only. Transitively-installed sub-SEEDs are silent in v0.
-- The report payload is a markdown document with YAML frontmatter, GitHub-issue-shaped, with at minimum: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`. Optional `## Note` body for user-provided free-form text.
-- The agent MUST NOT collect: paths, env vars, hostnames, shell output, stack traces, or any PII. `anon_machine_id` is the first 16 hex chars of `sha256(hostname + per_machine_salt)`; the salt is generated on first run and stored locally in `~/.config/seed/machine-id`.
-- Reports are opt-out: on first install on a new machine, the agent MUST display a one-time banner naming the destination and the fields, with instructions to disable (`SEED_FEEDBACK=off` env var, or `~/.config/seed/feedback.json` with `{"enabled": false}`). Banner state is persisted so subsequent installs do not repeat it.
-- Feedback failures (network, 4xx/5xx, timeout) MUST be silently dropped. Reporting failures MUST NOT propagate to the install outcome.
+  - `(default — agent uses plow's hub.)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified). ^obj-feedback-default
+  - An **HTTPS URL** on its own line (e.g. `https://feedback.acme.internal/seed-reports`) — agent uses that URL (for company-internal SEEDs reporting to private endpoints). Non-HTTPS destinations MUST be rejected by the agent (no plaintext transport for machine-linked reports). ^obj-feedback-custom
+  - `(none)` — feedback explicitly disabled for this SEED. ^obj-feedback-none
+- **Absent `## Feedback` means feedback is OFF for this SEED.** No reports are sent. Authors who want feedback MUST add an explicit `## Feedback` section with one of the three legal body forms. (Privacy-by-default: a SEED predating this convention does not silently become a reporting SEED when an agent rolls forward.)
+- The agent's runtime behavior when this section is present is specified in [[#Feedback is reported]] under `## Actions`.
 
 ### Wikilinks
 
@@ -134,6 +130,57 @@ The verbs performed BY the Objects above.
 - The agent MUST treat all repo-supplied shell (`## Dependencies` and `## Verify`) as high-trust input requiring per-block user confirmation. ^act-trust
 - The agent MUST treat `## Objects` and `## Actions` as low-trust (descriptive only; no side effects).
 - The read-only contract on `## Verify` is an authoring obligation, not a basis for the agent to skip confirmation. A malicious or mistaken SEED author could put mutating shell in Verify; the confirmation gate is the only invariant the agent can enforce from outside the source.
+
+### Feedback is reported
+
+The agent dispatches at most one feedback report per install attempt. ^act-feedback
+
+#### Trigger
+
+- Fires exactly once per install attempt that reaches a terminal state (`success`, `failure`, or `aborted`).
+- Fires only for the **root** SEED of the install — the one the user passed to `Install <url>`. Transitively-installed sub-SEEDs are silent in v0.
+- The agent MUST NOT fire if the root SEED's `## Feedback` section is absent or its body is `(none)`.
+
+#### Destination resolution
+
+Reading the root SEED's `## Feedback` body (whitespace-trimmed):
+
+1. Body is `(none)` → no report.
+2. Body is `(default — agent uses plow's hub.)` → agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified).
+3. Body is a single line parseable as an HTTPS URL → agent uses that URL.
+4. Any other body (HTTP URL, malformed text, multi-line body, etc.) → no report. The agent SHOULD log a one-line warning to stderr.
+
+#### Consent — opt-out with **per-destination** banner
+
+- Before the first report to each distinct destination URL on a machine, the agent MUST display a one-time banner naming **that** destination, the fields collected, and the disable instructions.
+- After the banner is acknowledged for a destination, the agent records the acknowledgement keyed by destination URL in `~/.config/seed/feedback.json`. A different destination on the same machine MUST re-prompt — consent to one URL is not consent to another. Example state file:
+
+  ```json
+  {
+    "enabled": true,
+    "destinations": {
+      "https://plow.io/seed/feedback":            "2026-05-11T20:30:00Z",
+      "https://feedback.acme.internal/seed-reports": "2026-05-11T21:00:00Z"
+    }
+  }
+  ```
+
+- Disable mechanisms (any one suppresses sending):
+  - Env var `SEED_FEEDBACK=off` for the current shell session.
+  - `~/.config/seed/feedback.json` containing `{"enabled": false}` — disables globally for this machine.
+  - Per-SEED override via `## Feedback\n\n(none)` — author-side opt-out.
+
+#### Payload
+
+- A markdown document with YAML frontmatter, GitHub-issue-shaped, with at minimum: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`. Optional `## Note` body for user-provided free-form text.
+- The agent MUST NOT collect: paths, env vars, hostnames, shell output, stack traces, or any PII.
+- `anon_machine_id` is the first 16 hex chars of `sha256(hostname + per_machine_salt)`. The salt is generated on first run and stored locally in `~/.config/seed/machine-id`. Wiping the salt rotates the ID.
+
+#### Failure modes
+
+- Feedback failures (network, 4xx/5xx, timeout, malformed body, non-HTTPS URL) MUST be silently dropped.
+- Reporting failures MUST NOT propagate to the install outcome. A user whose install succeeded but whose report failed to transmit MUST see a successful install.
+- No retry queue or offline buffering in v0. Lost reports are lost.
 
 ## Verify
 
