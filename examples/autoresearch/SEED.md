@@ -1,35 +1,32 @@
 # Purpose
 
-> See [[../../README#Purpose]] for the canonical purpose. This `SEED.md` is the install-flavor contract for installing @karpathy's [autoresearch](https://github.com/karpathy/autoresearch): a small single-GPU LLM training loop designed for autonomous overnight experimentation by a coding agent.
+> See [[../../README#Purpose]] for the canonical purpose. This `SEED.md` is the install contract for @karpathy's [autoresearch](https://github.com/karpathy/autoresearch): a single-GPU LLM training loop designed for autonomous overnight experimentation by a coding agent.
 
 ## Dependencies
 
-- [[../cuda/SEED#Purpose]] — NVIDIA driver + CUDA toolkit (autoresearch requires a single discrete NVIDIA GPU). ^dep-cuda
-- [[../../SEED#Purpose]] — this seed repo (provides `/install-seed`, the entry point that walks this SEED). ^dep-seed
-- External: Python 3.10+. ^dep-python
-- External: `uv` project manager (installed inline in `## Install` Step 2). ^dep-uv
-- External: `git`, ~5 GB free disk for the dataset cache. ^dep-disk
+- [[../cuda/SEED#Purpose]] — NVIDIA driver + CUDA toolkit (autoresearch requires a discrete NVIDIA GPU). ^dep-cuda
+- External: Python 3.10+, git, ~5 GB free disk in `$HOME`. ^dep-system
 
-## Install
+`$AUTORESEARCH_ROOT` is the agent's chosen location for the autoresearch checkout. It is distinct from `$REPO_ROOT` (which is the folder containing this `SEED.md` inside the seed repo).
 
-### Step 0 — Verify prerequisites
+### Prereq check
 
 ```bash
-nvidia-smi                                # MUST list at least one GPU
-python3 --version                         # MUST be ≥ 3.10
+nvidia-smi
+python3 --version
 git --version
-df -h ~ | tail -1                         # MUST show ≥ 5 GB available on $HOME
+df -h $HOME | tail -1
 ```
 
-If `nvidia-smi` fails, the CUDA SEED ([[../cuda/SEED#Install]]) MUST be installed first.
+`python3 --version` MUST report ≥ 3.10. If `nvidia-smi` fails, install [[../cuda/SEED#Purpose]] first.
 
-### Step 1 — Clone the autoresearch repo
+### Clone the autoresearch repo
 
 ```bash
-test -d ~/Hacking/autoresearch || git clone https://github.com/karpathy/autoresearch.git ~/Hacking/autoresearch
+test -d $AUTORESEARCH_ROOT || git clone https://github.com/karpathy/autoresearch.git $AUTORESEARCH_ROOT
 ```
 
-### Step 2 — Install `uv`
+### Install `uv`
 
 ```bash
 command -v uv || curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -37,43 +34,51 @@ export PATH="$HOME/.local/bin:$PATH"
 uv --version
 ```
 
-### Step 3 — Install Python dependencies
+### Install Python dependencies
 
 ```bash
-cd ~/Hacking/autoresearch && uv sync
+cd $AUTORESEARCH_ROOT && uv sync
 ```
 
-`uv sync` resolves the PyTorch wheel that matches the installed CUDA driver. If this step fails with a CUDA mismatch, re-run [[../cuda/SEED#Install]] Step 3 to verify the driver, then retry.
-
-### Step 4 — Download data and train tokenizer (one-time, ~2 min)
+### Download data and train tokenizer (one-time, ~2 min)
 
 ```bash
-cd ~/Hacking/autoresearch && uv run prepare.py
+cd $AUTORESEARCH_ROOT && uv run prepare.py
 ```
 
-This downloads the training shards and trains a BPE tokenizer into `~/.cache/autoresearch/`.
+## Objects
 
-### Step 5 — Sanity-check with a baseline training run (OPTIONAL, ~5 min)
+- `$AUTORESEARCH_ROOT/prepare.py` — fixed data prep + tokenizer (MUST NOT be modified). ^obj-prepare
+- `$AUTORESEARCH_ROOT/train.py` — model + optimizer + training loop; the file agents edit. ^obj-train
+- `$AUTORESEARCH_ROOT/program.md` — agent instructions; the experiment-loop runbook. ^obj-program
+- `$AUTORESEARCH_ROOT/pyproject.toml` — Python dependency manifest. ^obj-pyproject
+- `$AUTORESEARCH_ROOT/.venv/` — uv-managed virtualenv. ^obj-venv
+- `$HOME/.cache/autoresearch/` — local data cache (shards + tokenizer). ^obj-cache
 
-```bash
-cd ~/Hacking/autoresearch && uv run train.py
-```
+## Actions
 
-The baseline run finishes in ~5 minutes wall-clock and prints a `val_bpb:` line to stdout. `/install-seed` MAY skip this step (see [[#Open]]) and defer it to first manual run for faster install loops.
+- `prepare.py` downloads training shards and trains a BPE tokenizer into `$HOME/.cache/autoresearch/`. Idempotent; runs once per machine. ^act-prepare
+- `train.py` loads data from `$HOME/.cache/autoresearch/`, runs training on the configured GPU for ~5 minutes wall clock, prints a `val_bpb:` metric. Modifiable by the agent. ^act-train
+- `program.md` instructs the agent on the experiment loop: edit `train.py`, commit, run, check `val_bpb`, advance the branch if improved. ^act-program
+
+The autoresearch repo is designed for an agent to read `program.md` and iterate on `train.py` autonomously. Once installed, the agent runs experiments indefinitely until interrupted.
 
 ## Verify
 
 ```bash
-ls ~/Hacking/autoresearch/                                          # repo cloned
-ls ~/.cache/autoresearch/ | grep -E 'tokenizer|shard'               # data + tokenizer present
-test -f ~/Hacking/autoresearch/.venv/bin/python                     # uv env created
-nvidia-smi                                                          # GPU still visible
+test -d $AUTORESEARCH_ROOT
+test -f $AUTORESEARCH_ROOT/.venv/bin/python
+ls $HOME/.cache/autoresearch/ | grep -E 'tokenizer|shard'
+nvidia-smi
 ```
 
 All four checks MUST succeed.
 
 ## Open
 
-- Step 5 (baseline training run) is RECOMMENDED but slow. The implementer of `/install-seed` MAY support a `--no-baseline` flag that skips Step 5; the user can then run it manually for the first sanity check. ^o-baseline-opt
-- Smaller-compute tuning (lower DEPTH, lower MAX_SEQ_LEN, TinyStories dataset) is documented in autoresearch's upstream README under "Platform support" but NOT covered by this SEED — it would be a separate `examples/autoresearch-small/` SEED. ^o-small-compute
-^open
+- Smaller-compute tuning (lower `DEPTH`, lower `MAX_SEQ_LEN`, TinyStories dataset) is documented in autoresearch's upstream README but NOT covered by this SEED — that would be a separate `examples/autoresearch-small/` SEED. ^o-small-compute
+
+## Non-Goals
+
+- Multi-GPU and distributed training are out-of-scope (autoresearch is single-GPU by design).
+- macOS, AMD, and Windows variants are non-goals; see autoresearch's [notable forks](https://github.com/karpathy/autoresearch#notable-forks) for those platforms.

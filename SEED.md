@@ -1,196 +1,165 @@
 # Purpose
 
-> See [[README#Purpose]] for the canonical purpose. This `SEED.md` is the complete RFC 2119 contract: an AI agent or engineer reading this file (and the sub-folder SEEDs it links to) MUST be able to (re)build the SEED convention, the `/populate` and `/wrapup` skills, and the optional pre-commit hook from scratch.
+> See [[README#Purpose]] for the canonical purpose. This `SEED.md` is the complete RFC 2119 contract for the SEED convention. Reading it MUST be sufficient to (re)build the convention itself and validate that other SEEDs conform.
 
-**Status:** v0 (initial) &middot; **Date:** 2026-05-08
+**Status:** v4 &middot; **Date:** 2026-05-11
 
 ## Normative Language
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in RFC 2119.
 
-`Implementation-defined` means the behavior is part of the implementation contract, but this specification does not prescribe a single policy. Implementations MUST document their selected behavior.
+`Implementation-defined` means the behavior is part of the implementation contract; this specification does not prescribe a single policy.
 
-## 1. Problem
+Sub-folder SEEDs in this tree inherit the RFC 2119 declaration. They MUST NOT re-declare it.
 
-End-of-session context dies in chat scrollback. Knowledge accumulated across sessions has nowhere durable to live. Existing PKM tools either over-shoot (heavy stack with embeddings and install ceremony) or under-shoot (raw markdown with no convention an AI can target).
+## Dependencies
 
-SEED solves this with:
+(none — the seed repo is documentation, not installable software.)
 
-- A lightweight, recursively-readable convention (§ 2).
-- Two Claude Code skills that read and write the convention (`/populate`, `/wrapup`).
-- An optional shell-side pre-commit hook that warns on drift.
+## Objects
 
-Goal: any folder MUST be readable as a self-contained mental model, and the tree as a whole MUST be reconstructable from its SEED files alone.
+The convention's named entities — the things that exist when a SEED-conforming tree is in place.
 
-## 2. The Convention
+### Folder
 
-### 2.1 Folder shape
+- A SEED-participating folder. MUST contain `SEED.md`. MAY contain `README.md`. ^obj-folder
 
-Every SEED-participating folder MUST contain a `SEED.md`. The folder MAY also contain a `README.md`.
+### README.md
 
-A `SEED.md`'s purpose MUST be defined in the closest sibling-or-ancestor `README.md` (sibling preferred; if no sibling `README.md` exists, the closest ancestor `README.md` defines the purpose).
+- A markdown file at the root of a SEED-participating folder. ^obj-readme
+- MUST contain `# SEED` as H1.
+- MUST contain a `## Purpose` H2 section (marketing-readable prose).
+- MAY contain additional H2 sections (`## Install`, `## License`, demo video block).
+- The repo root MUST have one. Sub-folders MAY have one; their purpose is otherwise inherited from the closest ancestor README.
 
-The repo root MUST have both `README.md` (marketing front door) and `SEED.md` (top-level contract).
+### SEED.md
 
-Sub-folders MAY have only `SEED.md` (no sibling `README.md`); their purpose is then defined by the closest ancestor `README.md`.
+- A markdown file in every SEED-participating folder. ^obj-seedmd
+- MUST contain exactly one H1: `# Purpose`. All structural headings below MUST be H2 or deeper.
+- The `# Purpose` H1 MUST wikilink to the closest sibling-or-ancestor `README.md`'s `## Purpose` section.
+- MUST contain `## Dependencies`, `## Objects`, `## Actions`, `## Verify` in that order.
+- MAY contain `## Open` and/or `## Non-Goals` after the required sections.
 
-### 2.2 README.md shape
+### Dependencies section
 
-A SEED-participating `README.md` MUST contain:
+- Procedural; lists everything that MUST exist before this SEED's `## Verify` passes, in install order. ^obj-deps
+- Contains: sub-SEED wikilinks, external system requirements, external repo clones, repo setup commands.
+- MAY be empty (heading MUST exist; body MAY be `(none)`).
+- MAY use H3 sub-sections to group related install steps.
+- All shell blocks MUST be displayed to the user and explicitly confirmed before execution.
 
-- `# SEED` as the H1.
-- A `## Purpose` H2 section that defines the purpose in marketing-readable prose. The H2 anchor `Purpose` is the canonical back-reference target.
+### Objects section
 
-A SEED-participating `README.md` MAY contain additional H2 sections (`## Install`, `## License`, demo video block, etc.). Those are human-facing prose; they have no machine semantics.
+- Descriptive; lists the named entities in the running system AFTER `## Dependencies` are satisfied. ^obj-objects
+- Block IDs use `^obj-<slug>`.
+- No shell. No mutation.
 
-### 2.3 SEED.md shape
+### Actions section
 
-A `SEED.md` MUST open with a `# Purpose` H1 that wikilinks to the closest sibling-or-ancestor `README.md`'s `## Purpose` section. Format:
+- Descriptive; describes verbs performed BY objects. ^obj-actions
+- Form: "Object X does Y when Z."
+- Block IDs use `^act-<slug>`.
+- RFC 2119 normative language SHOULD be used to describe Action contracts.
 
-> See `[[<relative-path-to-README>#Purpose]]` for the canonical purpose. *{one-sentence description of how this SEED implements that purpose}*.
+### Verify section
 
-After the `# Purpose` H1, the body of `SEED.md` MUST be one of two flavors (§ 2.3.1, § 2.3.2). It MUST NOT mix flavors at the same level; a folder that needs both install and spec content SHOULD split into sub-folders.
+- Assertional; read-only checks that the install worked. ^obj-verify
+- MUST NOT mutate state produced by `## Dependencies`.
+- MAY create ephemeral test resources (containers, sandboxes, digital twins); MUST clean them up before exit.
+- Shell blocks do NOT require user confirmation (read-only by spec).
+- Block IDs use `^v-<slug>`.
 
-A `SEED.md` MUST contain exactly one H1 — the opening `# Purpose`. All structural headings below MUST be H2 (`##`) or deeper. This avoids markdown-linter conflicts and keeps the `# Purpose` back-reference anchor unambiguous.
+### Wikilinks
 
-#### 2.3.1 Install-flavor
+- Cross-references between SEEDs. ^obj-wikilinks
+- Sub-SEED dep references: `[[<child>/SEED#Purpose]]`.
+- README purpose back-refs: `[[<relative-path>/README#Purpose]]`.
+- Cross-references to numbered/structured items SHOULD use block-level: `[[other/SEED#^id]]`.
+- A `SEED.md` MUST NOT use bare paths or HTML anchors for cross-references.
 
-Used for environment-setup folders, index folders that mostly enumerate dependencies, and worked examples. The body MUST contain (in this order):
+### `$REPO_ROOT`
 
-- `## Dependencies` — bullet list of external (system, package) and internal (sub-folder SEED) dependencies, with block IDs.
-- `## Install` — step-by-step commands.
-- `## Verify` — runnable smoke checks.
+- The folder containing the current `SEED.md`. ^obj-reporoot
+- The agent decides where to clone; the SEED never prescribes a location.
+- Shell blocks MUST NOT hardcode absolute paths outside `$HOME/.cache/<name>/`-style dep-owned cache paths.
+- When a SEED clones a separate external repo (different git URL than the SEED's own repo), it SHOULD define a new `$<NAME>_ROOT` variable for that clone's location.
 
-The body MAY contain `## Open` (loose ends, deferred items) and additional folder-specific H2 sections that document binding contracts the folder owns. Additional sections MUST appear after the three required sections.
+## Actions
 
-#### 2.3.2 Spec-flavor
+The verbs performed BY the Objects above.
 
-Used for folders that contain code (or code-to-be-written). The body MUST contain (in this order):
+### Folder is read
 
-- `## Components` — the named entities (functions, classes, files), with block IDs.
-- `## API` — public contract (signatures, inputs, outputs, errors). RFC 2119 throughout.
-- `## Install` or `## Build` — how to wire the component into a working install.
-- `## Verify` — conformance tests (runnable commands + expected outcomes).
+- An agent (human or AI) reads `<folder>/SEED.md` top-down. ^act-read
+- The agent walks `## Dependencies` wikilinks recursively (leaves-first).
+- The agent reads `## Objects` and `## Actions` to understand the system.
 
-The body MAY contain `## Non-Goals`, `## Open`, and additional folder-specific H2 sections that document binding contracts the folder owns. Additional sections MUST appear after the four required sections.
+### SEED is installed
 
-A spec-flavor `SEED.md` MUST be sufficient (in conjunction with the SEEDs it depends on) to write the software from scratch.
+- An agent installs a SEED at `<url>` by: ^act-install
+  1. Cloning (or fetching) `<url>` to `$REPO_ROOT` (agent's choice of location).
+  2. Reading `<repo>/SEED.md`.
+  3. For each `[[<child>/SEED#Purpose]]` wikilink in `## Dependencies`, recursively installing the child SEED first.
+  4. Executing every shell block under `## Dependencies` (user-confirmed per block).
+  5. Executing `## Verify`.
+- Order: leaves-first, root-last.
 
-### 2.4 Block IDs
+### SEED is verified
 
-Block IDs use Obsidian's native `^id` syntax. They are deterministic and stable across small edits.
+- An agent runs the shell blocks under `## Verify`. ^act-verify
+- All blocks MUST exit zero for the SEED to be considered installed.
+- Verify is read-only and idempotent; the agent MAY run it any time, including BEFORE trusting a fresh install.
 
-- Section anchors use canonical short forms: `^purpose`, `^deps`, `^verify`, `^open`, `^components`, `^api`.
-- Bullet anchors use `<section-prefix>-<slugified-bold-name>`. Example: `^dep-claude-code`, `^obj-populate`, `^api-trigger`.
-- Numeric suffix on collision: `^htr`, `^htr2`.
+### SEED is trusted
 
-### 2.5 Wikilinks
+- The agent MUST treat `## Dependencies` as high-trust (executes arbitrary shell). ^act-trust
+- The agent MUST treat `## Objects`, `## Actions`, `## Verify` as low-trust (no side effects on installed state).
+- This trust boundary is why Verify is read-only by spec: it remains a safe re-runnable check even when the installed state is suspect.
 
-Cross-references between SEEDs MUST use Obsidian-style wikilinks:
+## Verify
 
-- Whole-section: `[[<relative-path>/SEED#<section-name>]]` (heading-text anchor).
-- Block-level: `[[<relative-path>/SEED#^<block-id>]]`.
-- README purpose back-reference: `[[<relative-path>/README#Purpose]]`.
-
-A `SEED.md` MUST NOT use bare paths or HTML anchors for cross-references.
-
-Heading anchors MUST use the **literal full heading text**, including any leading section numbers. Example: `[[SEED#2.6 Hierarchical Invariant]]`, NOT `[[SEED#2.6]]`. When a stable cross-reference to a numbered section is needed, a block-level anchor (`#^id`) is RECOMMENDED — it survives heading-text edits.
-
-### 2.6 Hierarchical Invariant
-
-When a parent SEED depends on a child folder's SEED, the parent's `## Dependencies` (install-flavor) or `## Components` (spec-flavor) MUST link to the child via `[[<child>/SEED#Purpose]]`.
-
-Forward-references to unborn folders (folders that do not yet exist on disk) MUST NOT appear in `## Dependencies` or `## Components`. Forward-looking content MUST live in a `README.md`'s `## Roadmap` section instead.
-
-A folder that has a `SEED.md` but no implementing code is **not** an unborn folder — its SEED is the spec for the unwritten code, and the unwritten artifacts live in that SEED's `## Open`.
-
-## 3. Components
-
-The seed repo's components are described in sub-folder SEEDs:
-
-- [[skills/SEED#Purpose]] — install-flavor index for the three skills shipped here. ^comp-skills
-- [[skills/populate/SEED#Purpose]] — spec-flavor contract for `/populate`. ^comp-populate
-- [[skills/wrapup/SEED#Purpose]] — spec-flavor contract for `/wrapup`. ^comp-wrapup
-- [[skills/install-seed/SEED#Purpose]] — spec-flavor contract for `/install-seed`. ^comp-install-seed
-- [[hooks/SEED#Purpose]] — install+spec hybrid for the optional pre-commit drift warning. ^comp-hooks
-- [[examples/SEED#Purpose]] — install-flavor; a worked example installing @karpathy's autoresearch through three composed SEEDs. ^comp-examples
-
-A reader who walks `cat **/SEED.md` (or follows the wikilinks down) MUST end with a complete understanding of every shipped component.
-
-## 4. Install Protocol
-
-### Step 0 — Verify prerequisites
+The conformance test for this `SEED.md`:
 
 ```bash
-git --version                                   # any modern git
-echo "$BASH_VERSION"                             # POSIX shell
-ls ~/.claude/skills/ >/dev/null 2>&1 && echo "skills dir OK"
+test "$(head -1 README.md)" = "# SEED"
+grep -q '^## Purpose' README.md
+grep -q '^# Purpose' SEED.md
+grep -q '^## Normative Language' SEED.md
+grep -qE '^## Dependencies$' SEED.md
+grep -qE '^## Objects$' SEED.md
+grep -qE '^## Actions$' SEED.md
+grep -qE '^## Verify' SEED.md
 ```
 
-If any check fails, install `git` / `bash` / Claude Code first.
+All eight checks MUST pass.
 
-### Step 1 — Clone the seed repo
-
-```bash
-test -d ~/Hacking/seed || git clone https://github.com/plow-pbc/seed.git ~/Hacking/seed
-```
-
-### Step 2 — Symlink skills
+The full tree conformance (every `SEED.md` in this repo):
 
 ```bash
-mkdir -p ~/.claude/skills/
-for s in populate wrapup install-seed; do
-  test -d ~/Hacking/seed/skills/$s || { echo "skill $s not yet shipped, skipping"; continue; }
-  test -e ~/.claude/skills/$s && { echo "refusing to overwrite ~/.claude/skills/$s"; exit 1; }
-  ln -sfn ~/Hacking/seed/skills/$s ~/.claude/skills/$s
+for f in $(find . -name 'SEED.md' -not -path './.git/*'); do
+  head -3 "$f" | grep -q 'README#Purpose' || { echo "FAIL no back-ref: $f"; exit 1; }
+  grep -q '^# Purpose' "$f" || { echo "FAIL no Purpose H1: $f"; exit 1; }
+  for sec in Dependencies Objects Actions Verify; do
+    grep -q "^## $sec" "$f" || { echo "FAIL no ## $sec: $f"; exit 1; }
+  done
 done
+echo "tree conforms"
 ```
 
-The installer MUST symlink (not copy) so edits in `~/Hacking/seed/` propagate. The installer MUST refuse to overwrite an existing entry at `~/.claude/skills/<skill>`.
+All `SEED.md` files in the tree MUST pass.
 
-### Step 3 — Reload Claude Code
-
-Start a new Claude Code session. Skills load on session start.
-
-### Step 4 — Run conformance test
-
-```bash
-cd ~/Hacking/seed
-test "$(head -1 README.md)" = "# SEED"           # README H1 is # SEED
-grep -q '^## Purpose' README.md                   # README has ## Purpose
-grep -q '^# Purpose' SEED.md                      # SEED.md opens with # Purpose
-grep -q '^## Normative Language' SEED.md          # RFC 2119 declared
-```
-
-All four checks MUST pass.
-
-## 5. Verify (full conformance)
-
-The full conformance test for an installation:
-
-1. `README.md` H1 is `# SEED` and contains `## Purpose`. ^v-readme
-2. Every `SEED.md` in the tree opens with `# Purpose` and a wikilink back-reference to a `README.md`'s `## Purpose`. ^v-purpose-ref
-3. Every wikilink resolves (target file + section exists). ^v-links
-4. `## Dependencies` / `## Components` link only to existing folders (no forward-references to unborn folders, per § 2.6). ^v-no-forward-refs
-5. `/populate` and `/wrapup` are loadable in Claude Code (visible via the Skill tool) once their `SKILL.md` files ship. ^v-skills
-
-A non-conforming repo MUST be diagnosed with the failing check named.
-
-## 6. Non-Goals (v0)
-
-- No embeddings, vector search, or DB.
-- No automated session detection. `/wrapup` runs only when typed.
-- No multi-user collaboration; personal-use shape only.
-- No backwards-compat migration tooling. v0 is greenfield.
-- No `/wrapup --reconcile` AI-merge for SEED conflicts across parallel checkouts.
-- No Claude Code Stop hook for AI-side end-of-session reminders. Pre-commit drift warning covers the main case.
-
-## 7. Open
+## Open
 
 - Demo video has not been recorded; the README's poster and mp4 paths are placeholders. ^o-demo
-- `/populate` skill is unimplemented — see [[skills/populate/SEED#Open]]. ^o-populate
-- `/wrapup` skill is unimplemented — see [[skills/wrapup/SEED#Open]]. ^o-wrapup
-- `/install-seed` skill is unimplemented — see [[skills/install-seed/SEED#Open]]. ^o-install-seed
-- Pre-commit hook is unimplemented — see [[hooks/SEED#Open]]. ^o-hooks
-- Worked example platform coverage is Linux + NVIDIA only — see [[examples/SEED#Open]]. ^o-examples
-^open
+- No `/populate`, `/wrapup`, or `/install-seed` skill ships in v0. Installation is natural-language: tell any agent "Install <url>". ^o-skills
+- No pre-commit drift hook in v0. ^o-hook
+- Block-ID generation specifics (max-length, collision handling) deferred to v1 when `/populate` ships. ^o-blockid
+
+## Non-Goals
+
+- No embeddings, vector search, or DB.
+- No multi-user collaboration; personal-use shape only.
+- No backwards-compat migration tooling.
+- No support for non-git distribution (tarballs, mirrors). HTTPS git URLs only.
+- No version-conflict resolution across SEEDs.
+- No `/populate`, `/wrapup`, `/install-seed`, or pre-commit hook in v0.

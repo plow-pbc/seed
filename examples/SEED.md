@@ -1,35 +1,34 @@
 # Purpose
 
-> See [[../README#Purpose]] for the canonical purpose. This `SEED.md` is the install-flavor index for the worked "hello world" example: a real-world install of @karpathy's [autoresearch](https://github.com/karpathy/autoresearch) (an autonomous LLM training experimentation loop) demonstrated through three composed SEEDs.
-
-The hello-world is intentionally non-trivial: it shows recursive composition. The autoresearch SEED depends on a sibling CUDA SEED (GPU runtime) and on the parent seed repo (which provides `/install-seed`). Reading the example top-down MUST be enough to install autoresearch from a fresh machine.
+> See [[../README#Purpose]] for the canonical purpose. This `SEED.md` is the install index for the worked "hello world" example: a real install of @karpathy's [autoresearch](https://github.com/karpathy/autoresearch) demonstrated through two composed sub-SEEDs.
 
 ## Dependencies
 
 - [[autoresearch/SEED#Purpose]] — the autoresearch application SEED. ^dep-autoresearch
-- [[cuda/SEED#Purpose]] — the CUDA / NVIDIA runtime SEED (transitive, via autoresearch). ^dep-cuda
-- [[../SEED#Purpose]] — this seed repo (transitive; provides `/install-seed`). ^dep-seed
+- [[cuda/SEED#Purpose]] — the CUDA / NVIDIA runtime SEED (transitive via autoresearch). ^dep-cuda
 
-## Install
+This index runs no shell. Installation happens by recursing into the wikilinks above.
 
-```
-/install-seed ~/Hacking/seed/examples/autoresearch
-```
+## Objects
 
-`/install-seed` walks the dependency graph: cuda first (driver + toolkit), then autoresearch (clone + uv + uv sync + prepare.py). Each shell block in each child SEED requires user confirmation per [[../skills/install-seed/SEED#API]].
+- `autoresearch/SEED.md` — the autoresearch application SEED. ^obj-autoresearch-seed
+- `cuda/SEED.md` — the CUDA / NVIDIA runtime SEED. ^obj-cuda-seed
+
+## Actions
+
+- An agent reading this SEED follows `[[autoresearch/SEED#Purpose]]` to install autoresearch. ^act-follow-autoresearch
+- The autoresearch SEED then recursively follows `[[../cuda/SEED#Purpose]]` to install CUDA first.
+- This index itself runs no shell.
 
 ## Verify
 
 ```bash
-nvidia-smi                                         # GPU detected, driver loaded
-ls ~/Hacking/autoresearch/                          # repo present
-ls ~/.cache/autoresearch/ | grep -E 'shard|tokenizer'    # data prepped
+test -f $REPO_ROOT/autoresearch/SEED.md
+test -f $REPO_ROOT/cuda/SEED.md
 ```
 
-All three checks MUST succeed once the example is fully installed.
+Both files MUST exist.
 
-## Open
+## Non-Goals
 
-- The CUDA SEED targets Linux + a single discrete NVIDIA GPU only. macOS / AMD / Windows variants are deferred to forks; autoresearch's README lists notable forks for those platforms. ^o-platform
-- The autoresearch baseline training run (`uv run train.py`, ~5 min) is RECOMMENDED but slow; the example marks it as optional in [[autoresearch/SEED#Open]]. ^o-baseline-runtime
-^open
+- This index intentionally does NOT install anything itself. All install shell lives in the child SEEDs.
