@@ -1,36 +1,45 @@
-# seed
+# SEED
 
-> Recursively-readable mental-model files for code repos. One `SEED.md` per folder. An Obsidian-style graph emerges from the filesystem.
+A recursive spec format. Hand your agent a SEED URL; the agent installs the software.
 
-```
-~/Hacking/
-  SEED.md           ← top-of-tree mental map
-  plow/
-    SEED.md         ← project-wide concepts
-    api/
-      SEED.md       ← API-specific concepts
-```
+<!-- TODO: record demo. Poster + mp4 should live in .github/media/ -->
 
-Each `SEED.md` follows a fixed schema (`Purpose`, `Dependencies`, `Objects`, `Actions`, `Verify`, optional `Tenets`/`Open`, `Sub-trees`). Reading the tree top-down should be sufficient to understand and rebuild the project.
+[![SEED demo poster](.github/media/seed-demo-poster.jpg)](.github/media/seed-demo.mp4)
 
-## Two skills
+_Demo: an agent reads a SEED, walks its dependency graph leaves-first, and installs the system. The spec is ground truth; the install is one realization._
 
-- **`/populate`** — generate `SEED.md` for the current folder (and subfolders with `-L N`) from filesystem signals (README, package metadata, file layout).
-- **`/wrapup`** — at session end, distill what was decided/learned into the right `SEED.md` files.
+## Purpose
 
-Both are pure Claude Code SKILL.md files. No runtime, no DB.
+In a world where software is free, the value will be the spec. SEED is a common, recursive definition for that spec. With this base SEED, you can build and run any other published SEED in your personal environment, and in a way that's personalized to your needs.
+
+This repo is the base SEED. The convention lives in [`SEED.md`](SEED.md) — RFC 2119 normative, hierarchical, recursive (every folder gets a `SEED.md`).
+
+Every SEED has the same shape:
+
+- `## Dependencies` — procedural; everything that must exist (sub-SEEDs, system requirements, external clones, setup commands).
+- `## Objects` — descriptive; named entities in the running system.
+- `## Actions` — descriptive; verbs performed BY objects.
+- `## Verify` — assertional; read-only checks (may use ephemeral test resources; must clean them up).
+
+Plus optional `## Open` (known incomplete) and `## Non-Goals` (explicit scope). Plain markdown. No DB. No embeddings. No runtime.
+
+The trick: the format describes itself in the same language it describes everything else. An agent that can read this repo's SEED can read any SEED.
 
 ## Install
 
-Open Claude Code in any directory and paste:
+Tell any AI agent:
 
-> "Install `plow-pbc/seed` on this machine. Read `~/Hacking/seed/SEED.md` and follow its `## Verify` section."
+> Install `git@github.com:plow-pbc/seed.git`
 
-Claude does the rest. Then start a new Claude Code session to load the skills.
+That's it. The agent clones the URL, reads `SEED.md`, and runs Verify — which is read-only and just confirms the convention is structurally sound. This repo ships no installable software; it ships the convention.
 
-## Full spec
+## Hello world
 
-See [`SEED.md`](SEED.md) — the install steps live in its `## Verify` section. The format itself is documented in [`schema/SEED.md`](schema/SEED.md).
+The worked example lives in its own repo: **[plow-pbc/seed-autoresearch](https://github.com/plow-pbc/seed-autoresearch)**. It installs @karpathy's [autoresearch](https://github.com/karpathy/autoresearch) on a Linux + NVIDIA machine via two composed SEEDs (cuda → autoresearch):
+
+> Install `git@github.com:plow-pbc/seed-autoresearch.git`
+
+Reading both repos side-by-side is the fastest way to understand the convention: this repo *defines* it, that repo *uses* it.
 
 ## License
 
