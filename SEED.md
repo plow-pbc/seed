@@ -38,7 +38,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 - MUST contain exactly one H1: `# Purpose`. All structural headings below MUST be H2 or deeper.
 - The `# Purpose` H1 MUST wikilink to the closest sibling-or-ancestor `README.md`'s `## Purpose` section.
 - MUST contain `## Dependencies`, `## Objects`, `## Actions`, `## Verify` in that order.
-- MAY contain `## Open` and/or `## Non-Goals` after the required sections.
+- MAY contain `## Feedback` after `## Verify`, then `## Open` and/or `## Non-Goals` after that.
 
 ### Dependencies section
 
@@ -73,6 +73,20 @@ The convention's named entities — the things that exist when a SEED-conforming
 - MAY create ephemeral test resources (containers, sandboxes, digital twins); MUST clean them up before exit.
 - Shell blocks MUST be displayed to the user and explicitly confirmed before execution. The agent cannot prove that an author actually honored the read-only contract from the source — confirmation is the only gate that holds for both authoring mistakes and malicious SEEDs.
 - Block IDs use `^v-<slug>`.
+
+### Feedback section
+
+- An OPTIONAL H2 section that declares where install reports go. ^obj-feedback
+- Three legal body forms:
+  - `(default — agent uses plow's hub.)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified).
+  - A bare URL on its own line — agent uses that URL (for company-internal SEEDs reporting to private endpoints).
+  - `(none)` — feedback disabled for this SEED.
+- Absent `## Feedback` is treated as the default form. To affirmatively disable, the SEED MUST include `## Feedback\n\n(none)`.
+- The agent sends one report per install attempt that reaches a terminal state (`success`, `failure`, or `aborted`) — for the **root** SEED of the install only. Transitively-installed sub-SEEDs are silent in v0.
+- The report payload is a markdown document with YAML frontmatter, GitHub-issue-shaped, with at minimum: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`. Optional `## Note` body for user-provided free-form text.
+- The agent MUST NOT collect: paths, env vars, hostnames, shell output, stack traces, or any PII. `anon_machine_id` is the first 16 hex chars of `sha256(hostname + per_machine_salt)`; the salt is generated on first run and stored locally in `~/.config/seed/machine-id`.
+- Reports are opt-out: on first install on a new machine, the agent MUST display a one-time banner naming the destination and the fields, with instructions to disable (`SEED_FEEDBACK=off` env var, or `~/.config/seed/feedback.json` with `{"enabled": false}`). Banner state is persisted so subsequent installs do not repeat it.
+- Feedback failures (network, 4xx/5xx, timeout) MUST be silently dropped. Reporting failures MUST NOT propagate to the install outcome.
 
 ### Wikilinks
 
@@ -151,7 +165,13 @@ diff <(grep -E '^## (Dependencies|Objects|Actions|Verify)$' SEED.md) \
      <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n')
 ```
 
-All five checks MUST exit zero.
+The `## Feedback` section is present (this SEED opts into the protocol):
+
+```bash
+grep -q '^## Feedback' SEED.md
+```
+
+All six checks MUST exit zero.
 
 The full tree conformance (every `SEED.md` in this repo, including sub-folder SEEDs that inherit RFC 2119 from the root):
 
@@ -169,6 +189,10 @@ test "$fail" = "0" && echo "tree conforms"
 ```
 
 All `SEED.md` files in the tree MUST pass.
+
+## Feedback
+
+(default — agent uses plow's hub.)
 
 ## Open
 
