@@ -76,8 +76,8 @@ The convention's named entities — the things that exist when a SEED-conforming
 
 ### Feedback section
 
-- An OPTIONAL H2 section that declares the destination for install reports. ^obj-feedback
-- Three legal body forms:
+- An OPTIONAL H2 section that opts a SEED into the install-report protocol. ^obj-feedback
+- Two legal body forms:
   - `(default)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified). The body is intentionally a single compact token so authors and generators don't have to match a prose sentence byte-for-byte. ^obj-feedback-default
   - `(none)` — feedback explicitly disabled for this SEED. ^obj-feedback-none
 - **Absent `## Feedback` means feedback is OFF for this SEED.** No reports are sent. Authors who want feedback MUST add an explicit `## Feedback` section with one of the three legal body forms. (Privacy-by-default: a SEED predating this convention does not silently become a reporting SEED when an agent rolls forward.)
@@ -140,15 +140,13 @@ The agent dispatches at most one feedback report per install attempt. ^act-feedb
 - Fires only for the **root** SEED of the install — the one the user passed to `Install <url>`. Transitively-installed sub-SEEDs are silent in v0.
 - The agent MUST NOT fire if the root SEED's `## Feedback` section is absent or its body is `(none)`.
 
-#### Destination resolution
+#### Body resolution
 
 Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 1. Body is `(none)` → no report.
 2. Body is `(default)` → agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified).
 3. Any other body → no report. The agent SHOULD log a one-line warning to stderr.
-
-v0 has exactly one destination (plow's hub). Custom destinations are deferred — they introduce per-destination consent, per-destination machine-ID scoping, and HTTPS validation that nothing in v0 needs.
 
 #### Consent — opt-out with one-time banner
 
@@ -176,25 +174,25 @@ v0 has exactly one destination (plow's hub). Custom destinations are deferred �
 
 The conformance checks below are runnable from the repo root. Each command MUST exit zero.
 
-The conformance checks below extract H1s and H2s using awk so that fenced code blocks (including the ones in this section) are skipped — the spec is allowed to contain literal `## Section` and `# Section` strings inside code blocks without breaking its own validator. The fence-toggle regex `/^ {0,3}```/` matches CommonMark fences with 0–3 leading spaces of indentation.
+The conformance checks below extract H1s and H2s using awk so that fenced code blocks (including the ones in this section) are skipped — the spec is allowed to contain literal `## Section` and `# Section` strings inside code blocks without breaking its own validator. The fence-toggle pattern `/^ {0,3}```/ || /^ {0,3}~~~/` matches CommonMark fences (backtick or tilde) with 0–3 leading spaces of indentation. The two-pattern form avoids ERE alternation inside `/.../`, which mawk does not support.
 
 README contains `## Purpose` (the back-reference target; H1 is not constrained):
 
 ```bash
-awk '/^ {0,3}```/{f=!f; next} !f && /^## /' README.md | grep -qx '## Purpose'
+awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^## /' README.md | grep -qx '## Purpose'
 ```
 
 `SEED.md` has exactly one H1 outside fenced code blocks, and it is `# Purpose`:
 
 ```bash
-test "$(awk '/^ {0,3}```/{f=!f; next} !f && /^# [^#]/' SEED.md | wc -l)" -eq 1
-test "$(awk '/^ {0,3}```/{f=!f; next} !f && /^# [^#]/' SEED.md)" = "# Purpose"
+test "$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^# [^#]/' SEED.md | wc -l)" -eq 1
+test "$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^# [^#]/' SEED.md)" = "# Purpose"
 ```
 
 This `SEED.md`'s full H2 sequence (excluding any inside fenced code blocks) matches the canonical order for a root SEED that opts into feedback:
 
 ```bash
-diff <(awk '/^ {0,3}```/{f=!f; next} !f && /^## /' SEED.md) \
+diff <(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^## /' SEED.md) \
      <(printf '## Normative Language\n## Dependencies\n## Objects\n## Actions\n## Verify\n## Feedback\n## Open\n## Non-Goals\n')
 ```
 
@@ -214,8 +212,8 @@ canonical='## Normative Language
 
 fail=0
 for f in $(find . -name 'SEED.md' -not -path './.git/*'); do
-  h1=$(awk '/^ {0,3}```/{f=!f; next} !f && /^# [^#]/' "$f")
-  h2=$(awk '/^ {0,3}```/{f=!f; next} !f && /^## /' "$f")
+  h1=$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^# [^#]/' "$f")
+  h2=$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^## /' "$f")
   test "$(echo "$h1" | wc -l)" -eq 1 && test "$h1" = "# Purpose" \
     || { echo "FAIL H1 not exactly '# Purpose': $f"; fail=1; continue; }
   head -3 "$f" | grep -q 'README#Purpose' \
