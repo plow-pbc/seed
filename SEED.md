@@ -78,7 +78,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 
 - An OPTIONAL H2 section that declares the destination for install reports. ^obj-feedback
 - Three legal body forms:
-  - `(default — agent uses plow's hub.)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified). ^obj-feedback-default
+  - `(default)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified). The body is intentionally a single compact token so authors and generators don't have to match a prose sentence byte-for-byte. ^obj-feedback-default
   - An **HTTPS URL** on its own line (e.g. `https://feedback.acme.internal/seed-reports`) — agent uses that URL (for company-internal SEEDs reporting to private endpoints). Non-HTTPS destinations MUST be rejected by the agent (no plaintext transport for machine-linked reports). ^obj-feedback-custom
   - `(none)` — feedback explicitly disabled for this SEED. ^obj-feedback-none
 - **Absent `## Feedback` means feedback is OFF for this SEED.** No reports are sent. Authors who want feedback MUST add an explicit `## Feedback` section with one of the three legal body forms. (Privacy-by-default: a SEED predating this convention does not silently become a reporting SEED when an agent rolls forward.)
@@ -146,7 +146,7 @@ The agent dispatches at most one feedback report per install attempt. ^act-feedb
 Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 1. Body is `(none)` → no report.
-2. Body is `(default — agent uses plow's hub.)` → agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified).
+2. Body is `(default)` → agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified).
 3. Body is a single line parseable as an HTTPS URL → agent uses that URL.
 4. Any other body (HTTP URL, malformed text, multi-line body, etc.) → no report. The agent SHOULD log a one-line warning to stderr.
 
@@ -172,9 +172,10 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 #### Payload
 
-- A markdown document with YAML frontmatter, GitHub-issue-shaped, with at minimum: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`. Optional `## Note` body for user-provided free-form text.
-- The agent MUST NOT collect: paths, env vars, hostnames, shell output, stack traces, or any PII.
-- `anon_machine_id` is the first 16 hex chars of `sha256(hostname + per_machine_salt)`. The salt is generated on first run and stored locally in `~/.config/seed/machine-id`. Wiping the salt rotates the ID.
+- A markdown document with YAML frontmatter, GitHub-issue-shaped. Exactly these fields, no body: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`.
+- **`seed_url`** MUST be the canonical repo URL with **userinfo, query, and fragment components stripped** (e.g., `https://github.com/foo/bar.git`, not `https://user:token@github.com/foo/bar.git?ref=branch#fragment`). If the install URL contains credentials, the agent MUST strip them before recording. Credential-bearing install URLs MUST NOT be transmitted in any form to the feedback endpoint.
+- **`anon_machine_id`** is the first 16 hex chars of `sha256(hostname + per_machine_salt + destination_url)`. The salt is generated on first run and stored locally in `~/.config/seed/machine-id`; wiping it rotates the ID across all destinations. Including the destination URL in the hash input ensures plow's hub and any private endpoint see different IDs from the same machine — they cannot cross-correlate users.
+- The agent MUST NOT collect or transmit: paths, env vars, hostnames, shell output, stack traces, free-form notes, IP addresses (beyond what HTTP unavoidably reveals), or any PII. v0 has **no free-form body** — rich failure context belongs in a GitHub issue against the SEED's repo, not the anonymous feedback report.
 
 #### Failure modes
 
@@ -186,60 +187,66 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 The conformance checks below are runnable from the repo root. Each command MUST exit zero.
 
-The README must contain a `## Purpose` H2 (the back-reference target). The H1 is not constrained.
+The conformance checks below extract H1s and H2s using awk so that ``` fenced code blocks (including the ones in this section) are skipped — the spec is allowed to contain literal `## Section` and `# Section` strings inside code blocks without breaking its own validator.
+
+README contains `## Purpose` (the back-reference target; H1 is not constrained):
 
 ```bash
-grep -q '^## Purpose' README.md
+awk '/^```/{f=!f; next} !f && /^## /' README.md | grep -qx '## Purpose'
 ```
 
-`SEED.md` must have exactly one H1, and that H1 must be `# Purpose`. (Counts of `^# ` lines and the literal H1 value.)
+`SEED.md` has exactly one H1 outside fenced code blocks, and it is `# Purpose`:
 
 ```bash
-test "$(grep -c '^# [^#]' SEED.md)" -eq 1
-test "$(grep '^# [^#]' SEED.md)" = "# Purpose"
+test "$(awk '/^```/{f=!f; next} !f && /^# [^#]/' SEED.md | wc -l)" -eq 1
+test "$(awk '/^```/{f=!f; next} !f && /^# [^#]/' SEED.md)" = "# Purpose"
 ```
 
-The root SEED declares RFC 2119:
+This `SEED.md`'s full H2 sequence (excluding any inside fenced code blocks) matches the canonical order for a root SEED that opts into feedback:
 
 ```bash
-grep -q '^## Normative Language' SEED.md
+diff <(awk '/^```/{f=!f; next} !f && /^## /' SEED.md) \
+     <(printf '## Normative Language\n## Dependencies\n## Objects\n## Actions\n## Verify\n## Feedback\n## Open\n## Non-Goals\n')
 ```
 
-Required H2 sections appear in the spec-mandated order:
+All four checks MUST exit zero.
+
+The full tree conformance (every `SEED.md` in this repo, including sub-folder SEEDs that inherit RFC 2119 from the root and may omit any optional H2s):
 
 ```bash
-diff <(grep -E '^## (Dependencies|Objects|Actions|Verify)$' SEED.md) \
-     <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n')
-```
+canonical='## Normative Language
+## Dependencies
+## Objects
+## Actions
+## Verify
+## Feedback
+## Open
+## Non-Goals'
 
-The `## Feedback` section is present (this SEED opts into the protocol):
-
-```bash
-grep -q '^## Feedback' SEED.md
-```
-
-All six checks MUST exit zero.
-
-The full tree conformance (every `SEED.md` in this repo, including sub-folder SEEDs that inherit RFC 2119 from the root):
-
-```bash
 fail=0
 for f in $(find . -name 'SEED.md' -not -path './.git/*'); do
-  test "$(grep -c '^# [^#]' "$f")" -eq 1       || { echo "FAIL multiple H1: $f"; fail=1; continue; }
-  test "$(grep '^# [^#]' "$f")" = "# Purpose"  || { echo "FAIL H1 not '# Purpose': $f"; fail=1; continue; }
-  head -3 "$f" | grep -q 'README#Purpose'      || { echo "FAIL no README#Purpose back-ref: $f"; fail=1; continue; }
-  diff <(grep -E '^## (Dependencies|Objects|Actions|Verify)$' "$f") \
+  h1=$(awk '/^```/{f=!f; next} !f && /^# [^#]/' "$f")
+  h2=$(awk '/^```/{f=!f; next} !f && /^## /' "$f")
+  test "$(echo "$h1" | wc -l)" -eq 1 && test "$h1" = "# Purpose" \
+    || { echo "FAIL H1 not exactly '# Purpose': $f"; fail=1; continue; }
+  head -3 "$f" | grep -q 'README#Purpose' \
+    || { echo "FAIL no README#Purpose back-ref: $f"; fail=1; continue; }
+  echo "$h2" | grep -E '^## (Dependencies|Objects|Actions|Verify)$' | diff - \
        <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
-       || { echo "FAIL required H2s not in order: $f"; fail=1; continue; }
+    || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }
+  echo "$h2" | awk -v canon="$canonical" '
+    BEGIN { n = split(canon, c, "\n"); i = 1 }
+    { while (i <= n && c[i] != $0) i++; if (i > n) exit 1 }
+  ' || { echo "FAIL H2 sequence not a subsequence of canonical: $f"; fail=1; continue; }
 done
 test "$fail" = "0" && echo "tree conforms"
 ```
 
-All `SEED.md` files in the tree MUST pass.
+All `SEED.md` files in the tree MUST pass — required H2s are present in order, AND every H2 (required or optional) appears in the canonical order from the list above.
 
 ## Feedback
 
-(default — agent uses plow's hub.)
+(default)
 
 ## Open
 
