@@ -69,9 +69,10 @@ The convention's named entities — the things that exist when a SEED-conforming
 ### Verify section
 
 - Assertional; read-only checks that the install worked. ^obj-verify
-- Verify is **normatively read-only on installed state** — an authoring contract: the SEED author MUST NOT put state-mutating commands here.
-- MAY create ephemeral test resources (containers, sandboxes, digital twins); MUST clean them up before exit.
-- Shell blocks MUST be displayed to the user and explicitly confirmed before execution. The agent cannot prove that an author actually honored the read-only contract from the source — confirmation is the only gate that holds for both authoring mistakes and malicious SEEDs.
+- Verify is a sequence of natural-language prompts the agent reads and follows. The prompts are normative; an OPTIONAL `ref/verify.sh` (see [[#ref/]]) MAY provide a deterministic bash implementation of the same prompts for CI / non-AI callers.
+- Verify is **normatively read-only on installed state** — an authoring contract: the SEED author MUST NOT put state-mutating instructions here.
+- MAY direct the agent to create ephemeral test resources (containers, sandboxes, digital twins); MUST direct cleanup before exit.
+- If a Verify prompt asks the agent to run shell, the agent MUST display the shell to the user and explicitly confirm before execution. Same trust gate as `## Dependencies` — the read-only guarantee is an authoring contract, not something the agent can prove from the source.
 - Block IDs use `^v-<slug>`.
 
 ### Feedback section
@@ -98,6 +99,13 @@ The convention's named entities — the things that exist when a SEED-conforming
 - Shell blocks MUST NOT hardcode absolute paths outside `$HOME/.cache/<name>/`-style dep-owned cache paths.
 - When a SEED clones a separate external repo (different git URL than the SEED's own repo), it SHOULD define a new `$<NAME>_ROOT` variable for that clone's location.
 
+### `ref/`
+
+- An OPTIONAL sub-folder at the repo root holding reference code for the SEED's runnable artifacts. ^obj-ref
+- When a SEED ships reference code (a verify script, a hook, a populate script, etc.), it MUST live in `ref/`. The parent SEED's `## Objects` H3 entries describe the artifacts in prose; `## Actions` describes what each does.
+- `ref/` itself does NOT require its own `SEED.md` — it's a code-holding folder, not a sub-SEED. The natural-language contract for the artifact lives in the parent SEED; the code inside `ref/` is one realization of that contract.
+- Alternative full implementations (a different language, a richer toolkit) live in separate repos, linked from `## Open` or wherever appropriate.
+
 ## Actions
 
 The verbs performed BY the Objects above.
@@ -120,9 +128,9 @@ The verbs performed BY the Objects above.
 
 ### SEED is verified
 
-- An agent runs the shell blocks under `## Verify` with the same per-block confirmation gate used for `## Dependencies`. ^act-verify
-- All blocks MUST exit zero for the SEED to be considered installed.
-- Verify is normatively read-only and idempotent (an authoring contract). The agent has no way to prove read-only-ness from the source, so confirmation is required even on re-verification.
+- An agent reads the natural-language prompts under `## Verify` and answers each one. All MUST return the expected answer for the SEED to be considered installed. ^act-verify
+- If a prompt asks the agent to run shell, the same per-block confirmation gate used for `## Dependencies` applies — the agent MUST display the shell to the user and confirm before execution. Verify is normatively read-only and idempotent (an authoring contract), but the agent has no way to prove read-only-ness from the source.
+- For CI or non-AI callers, the SEED MAY ship `ref/verify.sh` (see [[#ref/]]) as a deterministic bash implementation of the same prompts.
 
 ### SEED is trusted
 
@@ -172,64 +180,15 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 
 ## Verify
 
-The conformance checks below are runnable from the repo root. Each command MUST exit zero.
+Verification is a sequence of natural-language prompts the agent reads and answers. A SEED is conformant when every prompt returns the expected answer. Fenced code blocks (in any section, including this one) are not part of the prose surface — the agent reads markdown structure, not text patterns.
 
-The conformance checks below extract H1s and H2s using awk so that fenced code blocks (including the ones in this section) are skipped — the spec is allowed to contain literal `## Section` and `# Section` strings inside code blocks without breaking its own validator. The fence-toggle pattern `/^ {0,3}```/ || /^ {0,3}~~~/` matches CommonMark fences (backtick or tilde) with 0–3 leading spaces of indentation. The two-pattern form avoids ERE alternation inside `/.../`, which mawk does not support.
+1. **README structural check.** Read `README.md`. Does it contain a `## Purpose` H2 outside fenced code blocks? Expected: yes.
 
-README contains `## Purpose` (the back-reference target; H1 is not constrained):
+2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`), declare RFC 2119 in `## Normative Language`, and have the H2 sequence `## Dependencies → ## Objects → ## Actions → ## Verify` followed by any subset of `## Feedback`, `## Open`, `## Non-Goals` in that order? Expected: yes.
 
-```bash
-awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^## /' README.md | grep -qx '## Purpose'
-```
+3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the H1 MUST wikilink to a sibling-or-ancestor `README#Purpose` within the first three lines of the file, and sub-folder SEEDs MAY omit `## Normative Language` (inherited from the root). Expected: yes for all.
 
-`SEED.md` has exactly one H1 outside fenced code blocks, and it is `# Purpose`:
-
-```bash
-test "$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^# [^#]/' SEED.md | wc -l)" -eq 1
-test "$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^# [^#]/' SEED.md)" = "# Purpose"
-```
-
-This `SEED.md`'s full H2 sequence (excluding any inside fenced code blocks) matches the canonical order for a root SEED that opts into feedback:
-
-```bash
-diff <(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^## /' SEED.md) \
-     <(printf '## Normative Language\n## Dependencies\n## Objects\n## Actions\n## Verify\n## Feedback\n## Open\n## Non-Goals\n')
-```
-
-All four checks MUST exit zero.
-
-The full tree conformance (every `SEED.md` in this repo, including sub-folder SEEDs that inherit RFC 2119 from the root and may omit any optional H2s):
-
-```bash
-canonical='## Normative Language
-## Dependencies
-## Objects
-## Actions
-## Verify
-## Feedback
-## Open
-## Non-Goals'
-
-fail=0
-for f in $(find . -name 'SEED.md' -not -path './.git/*'); do
-  h1=$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^# [^#]/' "$f")
-  h2=$(awk '/^ {0,3}```/ || /^ {0,3}~~~/ {f=!f; next} !f && /^## /' "$f")
-  test "$(echo "$h1" | wc -l)" -eq 1 && test "$h1" = "# Purpose" \
-    || { echo "FAIL H1 not exactly '# Purpose': $f"; fail=1; continue; }
-  head -3 "$f" | grep -q 'README#Purpose' \
-    || { echo "FAIL no README#Purpose back-ref: $f"; fail=1; continue; }
-  echo "$h2" | grep -E '^## (Dependencies|Objects|Actions|Verify)$' | diff - \
-       <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
-    || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }
-  echo "$h2" | awk -v canon="$canonical" '
-    BEGIN { n = split(canon, c, "\n"); i = 1 }
-    { while (i <= n && c[i] != $0) i++; if (i > n) exit 1 }
-  ' || { echo "FAIL H2 sequence not a subsequence of canonical: $f"; fail=1; continue; }
-done
-test "$fail" = "0" && echo "tree conforms"
-```
-
-All `SEED.md` files in the tree MUST pass — required H2s are present in order, AND every H2 (required or optional) appears in the canonical order from the list above.
+A deterministic bash implementation of these three prompts lives at [`ref/verify.sh`](ref/verify.sh) — run it from the repo root for a CI-friendly exit-code answer. The natural-language prompts above are normative; `ref/verify.sh` is one reference implementation.
 
 ## Feedback
 
