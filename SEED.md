@@ -41,6 +41,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 ### Dependencies section
 
 - Procedural; lists everything that MUST exist before this SEED's `## Verify` passes, in install order. ^obj-deps
+- Within Dependencies, entries SHOULD be ordered: **hardware** first (GPU, RAM, disk), then **API** (keys, accounts, quotas), then **software** (OS, runtimes, packages). Sub-SEED wikilinks slot in by the category of what they install. ^obj-deps-order
 - Contains a mix of:
   - **Sub-SEED wikilinks** (`[[<child>/SEED#Purpose]]`) — for SEEDs in the same repo. Installed by walking the wikilink to the sub-folder. ^obj-deps-wikilink
   - **External SEED URLs** (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — for SEEDs in separate repos. Installed by treating the URL as a fresh install target (clone, read its `SEED.md`, recurse). ^obj-deps-external
