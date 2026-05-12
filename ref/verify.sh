@@ -29,8 +29,8 @@ root_h1=$(h1s_of SEED.md)
 test "$(echo "$root_h1" | wc -l)" -eq 1
 test "$root_h1" = "# Purpose"
 
-# 3. Root SEED.md declares RFC 2119.
-grep -q '^## Normative Language' SEED.md
+# 3. Root SEED.md declares RFC 2119 (outside fenced code blocks).
+h2s_of SEED.md | grep -qx '## Normative Language'
 
 # 4. Tree structural check: every SEED.md has one H1 (# Purpose), a
 #    README#Purpose back-reference in the first 3 lines, the four required
@@ -45,7 +45,7 @@ canonical='## Normative Language
 ## Non-Goals'
 
 fail=0
-for f in $(find . -name 'SEED.md' -not -path './.git/*'); do
+for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
   h1=$(h1s_of "$f")
   h2=$(h2s_of "$f")
   test "$(echo "$h1" | wc -l)" -eq 1 && test "$h1" = "# Purpose" \

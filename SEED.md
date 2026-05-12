@@ -81,7 +81,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 - Two legal body forms:
   - `(default)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified). The body is intentionally a single compact token so authors and generators don't have to match a prose sentence byte-for-byte. ^obj-feedback-default
   - `(none)` — feedback explicitly disabled for this SEED. ^obj-feedback-none
-- **Absent `## Feedback` means feedback is OFF for this SEED.** No reports are sent. Authors who want feedback MUST add an explicit `## Feedback` section with one of the three legal body forms. (Privacy-by-default: a SEED predating this convention does not silently become a reporting SEED when an agent rolls forward.)
+- **Absent `## Feedback` means feedback is OFF for this SEED.** No reports are sent. Authors who want feedback MUST add an explicit `## Feedback` section with one of the two legal body forms. (Privacy-by-default: a SEED predating this convention does not silently become a reporting SEED when an agent rolls forward.)
 - The agent's runtime behavior when this section is present is specified in [[#Feedback is reported]] under `## Actions`.
 
 ### Wikilinks
@@ -123,7 +123,7 @@ The verbs performed BY the Objects above.
   2. Reading `<repo>/SEED.md`.
   3. For each SEED dependency in `## Dependencies` — either a `[[<child>/SEED#Purpose]]` wikilink (sub-folder SEED in the same repo) or an external SEED URL (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — recursively installing that SEED first by repeating this procedure against it.
   4. Executing every shell block under `## Dependencies` (user-confirmed per block).
-  5. Executing `## Verify` (user-confirmed per block).
+  5. Answering the `## Verify` prompts (user-confirmed for any shell each prompt asks the agent to run).
 - Order: leaves-first, root-last.
 
 ### SEED is verified

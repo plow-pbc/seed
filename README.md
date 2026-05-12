@@ -32,7 +32,7 @@ Tell any AI agent:
 
 > Install `git@github.com:plow-pbc/seed.git`
 
-That's it. The agent clones the URL, reads `SEED.md`, and runs Verify (confirming each shell block before running it) — which checks the convention is structurally sound. This repo ships no installable software; it ships the convention.
+That's it. The agent clones the URL, reads `SEED.md`, and answers the `## Verify` prompts (confirming any shell each prompt asks it to run) — which checks the convention is structurally sound. This repo ships no installable software; it ships the convention. CI / non-AI callers can run the deterministic equivalent at [`ref/verify.sh`](https://github.com/plow-pbc/seed/blob/main/ref/verify.sh).
 
 ## Hello world
 
