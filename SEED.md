@@ -2,8 +2,6 @@
 
 > See [[README#Purpose]].
 
-**Status:** v4 &middot; **Date:** 2026-05-11
-
 ## Normative Language
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in RFC 2119.
@@ -186,7 +184,7 @@ Verification is a sequence of natural-language prompts the agent reads and answe
 
 2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`), declare RFC 2119 in `## Normative Language`, and have the H2 sequence `## Dependencies → ## Objects → ## Actions → ## Verify` followed by any subset of `## Feedback`, `## Open`, `## Non-Goals` in that order? Expected: yes.
 
-3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the H1 MUST wikilink to a sibling-or-ancestor `README#Purpose` within the first three lines of the file, and sub-folder SEEDs MAY omit `## Normative Language` (inherited from the root). Expected: yes for all.
+3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-folder SEEDs MAY omit `## Normative Language` (inherited from the root). Expected: yes for all.
 
 A deterministic bash implementation of these three prompts lives at [`ref/verify.sh`](ref/verify.sh) — run it from the repo root for a CI-friendly exit-code answer. The natural-language prompts above are normative; `ref/verify.sh` is one reference implementation.
 
