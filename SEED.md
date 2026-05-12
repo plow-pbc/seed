@@ -1,6 +1,6 @@
 # Purpose
 
-> See [[README#Purpose]] for the canonical purpose. This `SEED.md` is the complete RFC 2119 contract for the SEED convention. Reading it MUST be sufficient to (re)build the convention itself and validate that other SEEDs conform.
+> See [[README#Purpose]].
 
 **Status:** v4 &middot; **Date:** 2026-05-11
 
@@ -36,7 +36,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 
 - A markdown file in every SEED-participating folder. ^obj-seedmd
 - MUST contain exactly one H1: `# Purpose`. All structural headings below MUST be H2 or deeper.
-- The `# Purpose` H1 MUST wikilink to the closest sibling-or-ancestor `README.md`'s `## Purpose` section.
+- The `# Purpose` section's body MUST be **only** a wikilink to the closest sibling-or-ancestor `README.md`'s `## Purpose` section — nothing else. Purpose has one canonical location (the README); duplicating it in SEED.md guarantees drift. The recommended form is a blockquote: `> See [[<relative-path>/README#Purpose]].`
 - MUST contain `## Dependencies`, `## Objects`, `## Actions`, `## Verify` in that order.
 - MAY contain `## Feedback` after `## Verify`, then `## Open` and/or `## Non-Goals` after that.
 
