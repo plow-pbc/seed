@@ -11,13 +11,15 @@ Reference implementation of the natural-language contract at [[../../../SEED#^ac
 
 Every shell block under `## Dependencies` and every shell prompted by `## Verify` MUST be displayed in full and confirmed by the user before execution. No batching, no "approve all", no `--yes` flag. This is the only invariant the agent can enforce from outside the SEED's source.
 
+The skill's own pre-SEED commands (clone, cd) ALSO display + confirm — the user-supplied URL/path is untrusted shell data until the SEED is read and the trust model applies. Pass user input as `argv` (never interpolated into a shell-quoted string), and use `--` to terminate flag parsing where the tool supports it.
+
 ## Inputs
 
 Parse the single arg into one of three modes:
 
-1. **Clone mode** — arg matches `https://...` or `git@host:...` (per SEED.md's supported transports). Ask the user once where to clone; default to `$HOME/Hacking/<repo>/`, falling back to `<default>2`, `<default>3`, etc. if the default already exists. Clone with `git clone <url> <target>`.
+1. **Clone mode** — arg matches `https://...` or `git@host:...` (per SEED.md's supported transports). Ask the user once where to clone; default to `$HOME/Hacking/<repo>/`, falling back to `<default>2`, `<default>3`, etc. if the default already exists. Display and confirm the clone command before running: `git clone -- <url> <target>` (the `--` prevents a URL starting with `-` from being parsed as a flag).
 
-2. **Local mode** — arg is a path that exists and contains a `SEED.md`. `cd` into it; skip cloning.
+2. **Local mode** — arg is a path that exists and contains a `SEED.md`. Display and confirm the `cd -- <path>` before running. Skip cloning.
 
 3. **CWD mode** — empty arg or `.`. Treat the current working directory as the SEED root. Confirm `SEED.md` exists there; abort otherwise.
 
@@ -30,6 +32,8 @@ The procedure is defined ONCE in SEED.md. Do not restate it here.
 ## Feedback dispatch
 
 After reaching a terminal state (`success`, `failure`, or `aborted`), evaluate [[../../../SEED#^act-feedback]] against the root SEED's `## Feedback` section. Fire at most one report. The consent banner, the payload schema, and the disable mechanisms are all specified there.
+
+Feedback fires only in **Clone mode** — the payload requires a canonical `seed_url` (credential-stripped git URL) per the parent contract, which only exists when the user passed a git URL. Local and CWD modes skip feedback entirely; reporting a local path would either leak PII or violate the payload contract.
 
 ## Failure surface
 
