@@ -105,6 +105,16 @@ The convention's named entities — the things that exist when a SEED-conforming
 - `ref/` itself does NOT require its own `SEED.md` — it's a code-holding folder, not a sub-SEED. The natural-language contract for the artifact lives in the parent SEED; the code inside `ref/` is one realization of that contract.
 - Alternative full implementations (a different language, a richer toolkit) live in separate repos, linked from `## Open` or wherever appropriate.
 
+### ref/skills/seed-create/
+
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is authored]]. ^obj-skill-create
+- Contains `SKILL.md` (interview-driven authoring flow) and any supporting files.
+
+### ref/skills/seed-install/
+
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is installed]]. ^obj-skill-install
+- Contains `SKILL.md`, which delegates to the natural-language contract in `## Actions > SEED is installed` rather than restating it.
+
 ## Actions
 
 The verbs performed BY the Objects above.
@@ -115,6 +125,19 @@ The verbs performed BY the Objects above.
 - The agent walks `## Dependencies` wikilinks recursively (leaves-first).
 - The agent reads `## Objects` and `## Actions` to understand the system.
 
+### SEED is authored
+
+An agent authors a new SEED for a capability the user names by: ^act-author
+
+1. Interviewing the user (one question at a time) about the capability: its purpose, hardware/API/software dependencies, named objects, observable actions, and how to verify it works.
+2. Inspecting the live system read-only to corroborate user answers (e.g. `which`, `nvidia-smi`, reading package manifests). All shell MUST be displayed and user-confirmed per [[#SEED is trusted]].
+3. Drafting `SEED.md` and `README.md` with the canonical structure (one `# Purpose` H1, `## Dependencies → ## Objects → ## Actions → ## Verify`, optional `## Feedback`, `## Open`, `## Non-Goals`), and presenting the draft for user approval before writing.
+4. On approval, creating a new directory at a user-chosen path, writing the files, running `git init`, and creating an initial commit. The agent MUST NOT push or create a remote repo; distribution is the user's choice.
+5. Running the convention's three structural Verify prompts (from this repo's `SEED.md > ## Verify`) against the new tree to confirm structural conformance. MAY use this repo's `ref/verify.sh` as the deterministic implementation, run with the new directory as cwd. This is the SEED *convention's* verify, not the new SEED's capability-specific verify (which checks the installed system, not the SEED's own structure).
+6. The agent MUST NOT include literal secret values (API keys, tokens, credentials) in the drafted SEED. The agent MAY describe the requirement ("requires `OPENAI_API_KEY` in env") but never the value.
+
+A SEED authored this way is structurally indistinguishable from one written by hand.
+
 ### SEED is installed
 
 - An agent installs a SEED at `<url>` by: ^act-install
@@ -124,6 +147,7 @@ The verbs performed BY the Objects above.
   4. Executing every shell block under `## Dependencies` (user-confirmed per block).
   5. Answering the `## Verify` prompts (user-confirmed for any shell each prompt asks the agent to run).
 - Order: leaves-first, root-last.
+- `ref/skills/seed-install/` is the reference Claude-skill implementation of this action; it accepts a git URL, a local path, or `.` (cwd).
 
 ### SEED is verified
 
@@ -196,9 +220,9 @@ A deterministic bash implementation of these three prompts lives at [`ref/verify
 ## Open
 
 - Demo video has not been recorded; the README's poster and mp4 paths are placeholders. ^o-demo
-- No `/populate`, `/wrapup`, or `/install-seed` skill ships in v0. Installation is natural-language: tell any agent "Install <url>". ^o-skills
+- No `/wrapup` skill in v1. Closing out an install (commits, push, post-install report cleanup) is still natural-language. ^o-wrapup
 - No pre-commit drift hook in v0. ^o-hook
-- Block-ID generation specifics (max-length, collision handling) deferred to v1 when `/populate` ships. ^o-blockid
+- Block-ID generation specifics (max-length, collision handling) deferred to v2 when `/seed-create` ships its own block-ID generator. ^o-blockid
 
 ## Non-Goals
 
