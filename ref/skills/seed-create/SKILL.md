@@ -141,10 +141,10 @@ If the capability requires a secret, the SEED MAY describe the requirement ("req
 
 ## Step 7 — Write + commit
 
-After draft approval, run each block with user confirmation. Writes are NOT batched the way read-only probes were — each shell block displays and confirms individually:
+After draft approval, run each block with user confirmation. Writes are NOT batched the way read-only probes were — each shell block displays and confirms individually. The target path MUST NOT already exist; `mkdir` (without `-p`) is intentional so an existing directory fails the run loudly rather than silently committing unrelated contents on top:
 
 ```bash
-mkdir -p <target-path>
+mkdir <target-path>
 cd <target-path>
 git init
 # Write SEED.md, README.md, and (only if the user requested it) ref/verify.sh
