@@ -172,11 +172,12 @@ If the user identified sub-capabilities that warrant their own SEED:
 
 During reconnaissance and drafting, NEVER include literal secret values in any drafted file. Specifically:
 
-- Env vars matching `*_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD`.
+- Env vars matching `*_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD`, `*_URL`, `*_URI`, `*_CONNECTION_STRING`, `*_DSN` (connection-string env vars often embed credentials in userinfo).
+- URI userinfo — any URL value of the form `scheme://user:password@host/...`. Strip the `user:password@` segment before showing or storing. `docker compose config` and similar reconnaissance probes routinely print these.
 - Paths under `~/.ssh/`, `~/.aws/credentials`, `~/.config/gh/hosts.yml`, `~/.netrc`.
 - Anything matching `sk-...`, `ghp_...`, `xox[abp]-...`, AWS `AKIA.../ASIA...`, JWTs.
 
-If the capability requires a secret, the SEED MAY describe the requirement ("requires `OPENAI_API_KEY` in env") but MUST NOT show the value. If a probe result contains a secret, redact it (show only the last 3 chars: `sk-...xY7`) before presenting to the user.
+If the capability requires a secret, the SEED MAY describe the requirement ("requires `OPENAI_API_KEY` in env", "requires `DATABASE_URL` in env") but MUST NOT show the value. If a probe result contains a secret, redact it (show only the last 3 chars: `sk-...xY7`) before presenting to the user. For env vars whose names alone could leak structure (e.g. internal hostnames), summarize as a count and category rather than verbatim.
 
 ## Step 7 — Write + commit
 
