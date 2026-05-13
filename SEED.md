@@ -231,4 +231,3 @@ A deterministic bash implementation of these three prompts lives at [`ref/verify
 - No backwards-compat migration tooling.
 - No support for non-git distribution (tarballs, mirrors). Both SSH (`git@host:...`) and HTTPS (`https://...`) git URLs are valid install URLs; the agent picks the transport.
 - No version-conflict resolution across SEEDs.
-- No `/populate`, `/wrapup`, `/install-seed`, or pre-commit hook in v0.

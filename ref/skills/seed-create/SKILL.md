@@ -211,7 +211,7 @@ Print:
 
 Do NOT run any of those steps yourself. Distribution is the user's call.
 
-## Non-goals for v1
+## Non-Goals for v1
 
 - No editing of an existing SEED (use a fresh `/seed-create` or hand-edit).
 - No sub-SEED authoring inside an existing tree (top-level only).

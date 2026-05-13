@@ -40,7 +40,7 @@ On any user-aborted shell block:
 3. Fire the feedback report if eligible.
 4. Report partial state to the user: what installed, what didn't, where to resume from. Do not auto-retry.
 
-## Non-goals for v1
+## Non-Goals for v1
 
 - No resume from partial install (rerun from the top).
 - No parallel sub-SEED installation (leaves-first stays sequential).
