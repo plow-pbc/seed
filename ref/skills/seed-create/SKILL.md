@@ -91,9 +91,9 @@ For each fact derived from the probes, choose the right tier:
 
 ## Step 4 — Draft `SEED.md` + `README.md`
 
-Use this canonical structure (matching the parent SEED.md's schema):
+Draft `SEED.md` directly against the canonical schema in [[../../../SEED#^obj-seedmd]] (one `# Purpose` H1 whose body is only a wikilink to `README#Purpose`; H2 sequence per the schema; `## Dependencies` ordered per [[../../../SEED#^obj-deps-order]]; `## Verify` is natural-language prompts per [[../../../SEED#^obj-verify]]). Do not transcribe the schema into this skill — read the parent contract, follow it, fail loudly if anything in the draft would disagree with it. This is the single source of truth: when the convention changes, the draft changes with it.
 
-**`README.md`:**
+Draft `README.md` to this short shape (the convention is mostly free-form here):
 
 ```markdown
 # <Capability Name>
@@ -111,46 +111,6 @@ Tell any AI agent:
 ## License
 
 <user-chosen — default MIT>
-```
-
-**`SEED.md`:**
-
-```markdown
-# Purpose
-
-> See [[README#Purpose]].
-
-## Normative Language
-
-The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in RFC 2119.
-
-## Dependencies
-
-<ordered hardware → API → software, per parent SEED's ^obj-deps-order>
-
-## Objects
-
-<H3 entries with ^obj-* block IDs>
-
-## Actions
-
-<H3 entries with ^act-* block IDs>
-
-## Verify
-
-<numbered natural-language read-only checks>
-
-## Feedback
-
-<(default) or (none); omit section entirely to opt out>
-
-## Open
-
-<known incomplete items>
-
-## Non-Goals
-
-<explicit out-of-scope>
 ```
 
 Present both files to the user *in full* and ask:
