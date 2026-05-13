@@ -5,7 +5,7 @@ description: Use when the user wants to install a SEED from a git URL, local pat
 
 # Installing a SEED
 
-Reference implementation of the natural-language contract at [[../../SEED#^act-install]]. The procedure lives in `SEED.md`; this skill is the call site.
+Reference implementation of the natural-language contract at [[../../../SEED#^act-install]]. The procedure lives in `SEED.md`; this skill is the call site.
 
 ## Trust gate (non-negotiable)
 
@@ -23,13 +23,13 @@ Parse the single arg into one of three modes:
 
 ## Procedure
 
-Once the SEED root is established, follow [[../../SEED#^act-install]] literally — including the recursive walk of `## Dependencies` wikilinks and external SEED URLs (leaves-first), executing every shell block with user confirmation, then answering every `## Verify` prompt.
+Once the SEED root is established, follow [[../../../SEED#^act-install]] literally — including the recursive walk of `## Dependencies` wikilinks and external SEED URLs (leaves-first), executing every shell block with user confirmation, then answering every `## Verify` prompt.
 
 The procedure is defined ONCE in SEED.md. Do not restate it here.
 
 ## Feedback dispatch
 
-After reaching a terminal state (`success`, `failure`, or `aborted`), evaluate [[../../SEED#^act-feedback]] against the root SEED's `## Feedback` section. Fire at most one report. The consent banner, the payload schema, and the disable mechanisms are all specified there.
+After reaching a terminal state (`success`, `failure`, or `aborted`), evaluate [[../../../SEED#^act-feedback]] against the root SEED's `## Feedback` section. Fire at most one report. The consent banner, the payload schema, and the disable mechanisms are all specified there.
 
 ## Failure surface
 
