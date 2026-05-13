@@ -43,14 +43,9 @@ h2s_of SEED.md | grep -qx '## Normative Language'
 #    body is exactly one non-blank line containing a README#Purpose
 #    wikilink, the four required H2s in order, and a full H2 sequence
 #    that's a subsequence of canonical.
-canonical='## Normative Language
-## Dependencies
-## Objects
-## Actions
-## Verify
-## Feedback
-## Open
-## Non-Goals'
+# Pipe-separated so the value survives `awk -v` across awk variants
+# (BSD awk on macOS rejects multi-line -v values).
+canonical='## Normative Language|## Dependencies|## Objects|## Actions|## Verify|## Feedback|## Open|## Non-Goals'
 
 fail=0
 for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
@@ -67,7 +62,7 @@ for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
        <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
     || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }
   echo "$h2" | awk -v canon="$canonical" '
-    BEGIN { n = split(canon, c, "\n"); i = 1 }
+    BEGIN { n = split(canon, c, "|"); i = 1 }
     { while (i <= n && c[i] != $0) i++; if (i > n) exit 1; i++ }
   ' || { echo "FAIL H2 sequence not a subsequence of canonical (or has duplicates): $f"; fail=1; continue; }
 done
