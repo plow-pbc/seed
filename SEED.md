@@ -195,7 +195,7 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 #### Payload
 
 - A markdown document with YAML frontmatter, GitHub-issue-shaped. Exactly these fields, no body: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`.
-- **`seed_url`** MUST be the canonical repo URL with **userinfo, query, and fragment components stripped** (e.g., `https://github.com/foo/bar.git`, not `https://user:token@github.com/foo/bar.git?ref=branch#fragment`). If the install URL contains credentials, the agent MUST strip them before recording. Credential-bearing install URLs MUST NOT be transmitted in any form to the feedback endpoint.
+- **`seed_url`** MUST be the URL the install accepted in clone mode — by contract (`^act-install-clone-url`) that URL already has no userinfo, query, or fragment, so the payload value is the install URL verbatim (e.g., `https://github.com/foo/bar.git`).
 - **`anon_machine_id`** is the first 16 hex chars of `sha256(hostname + per_machine_salt)`. The salt is generated on first run and stored locally in `~/.config/seed/machine-id`; wiping it rotates the ID.
 - The agent MUST NOT collect or transmit: paths, env vars, hostnames, shell output, stack traces, free-form notes, IP addresses (beyond what HTTP unavoidably reveals), or any PII. v0 has **no free-form body** — rich failure context belongs in a GitHub issue against the SEED's repo, not the anonymous feedback report.
 
@@ -213,7 +213,7 @@ Verification is a sequence of natural-language prompts the agent reads and answe
 
 2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`) and match the canonical H2 grammar at [[#^seed-grammar]] (including the root-only `## Normative Language` requirement)? Expected: yes.
 
-3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-folder SEEDs MAY omit `## Normative Language` (inherited from the root). Expected: yes for all.
+3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-folder SEEDs MUST NOT contain `## Normative Language` (they inherit it from the root, per `^seed-grammar`). Expected: yes for all.
 
 A deterministic bash implementation of these three prompts lives at [`ref/verify.sh`](ref/verify.sh) — run it from the repo root for a CI-friendly exit-code answer. The natural-language prompts above are normative; `ref/verify.sh` is one reference implementation.
 
@@ -227,6 +227,7 @@ A deterministic bash implementation of these three prompts lives at [`ref/verify
 - No `/wrapup` skill in v1. Closing out an install (commits, push, post-install report cleanup) is still natural-language. ^o-wrapup
 - No pre-commit drift hook in v0. ^o-hook
 - Block-ID generation specifics (max-length, collision handling) deferred to v2 when `/seed-create` ships its own block-ID generator. ^o-blockid
+- No CI. macOS/BSD awk portability of `ref/verify.sh` is exercised only on the author's dev machine; a `.github/workflows/test.yml` running `just test` on `ubuntu-latest` and `macos-latest` is the planned remedy and tracked separately. ^o-ci
 
 ## Non-Goals
 
