@@ -95,13 +95,15 @@ Operationally, when an inspection probe surfaces a secret despite the parent rul
 
 After draft approval, run each block with user confirmation. Writes are NOT batched the way read-only probes were — each shell block displays and confirms individually. The target path MUST NOT already exist; `mkdir` (without `-p`) is intentional so an existing directory fails the run loudly rather than silently committing unrelated contents on top.
 
+The user-supplied `<target-path>` is untrusted shell data. Pass it as an argv argument to `mkdir` / `cd` (never interpolated into a shell-quoted string), and use `--` to terminate flag parsing — same discipline `/seed-install` applies to user-supplied clone targets. The shell blocks below show the canonical form (`mkdir -- "$target_path"`, `cd -- "$target_path"`); when constructing the actual commands, bind `<target-path>` through the agent's argv/env mechanism rather than splicing the user's text into the rendered command string.
+
 Verify the convention's three structural checks against the new tree **before** `git commit` — a failed verify means structural drift in the draft, and committing first leaves a non-conforming initial commit in the new SEED's history. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg (without the arg, `ref/verify.sh` verifies the convention repo itself, not the new SEED).
 
 **Bootstrap** — runs exactly once, on the first approval:
 
 ```bash
-mkdir -- "<target-path>"
-cd -- "<target-path>"
+mkdir -- "$target_path"
+cd -- "$target_path"
 git init
 ```
 
