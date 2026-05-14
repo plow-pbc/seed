@@ -15,13 +15,13 @@ The skill's own pre-SEED commands (clone, cd) ALSO display + confirm — the use
 
 ## Inputs
 
-Parse the single arg into one of three modes:
+The three input modes (clone / local / CWD) are defined in [[../../../SEED#^act-install-modes]]. This skill's per-mode operational rules:
 
-1. **Clone mode** — arg matches `https://...` or `git@host:...` (per SEED.md's supported transports). If the URL contains userinfo (`user:token@`), **reject** — ask the user to either use the SSH form (`git@host:org/repo.git`) or remove the credentials from the URL and rely on their git credential helper. Passing credential-bearing URLs to `git clone` puts the token in this process's argv (visible to anyone who can read `/proc/<pid>/cmdline` on this machine, and often to shell history). Ask the user once where to clone. If the chosen path already exists, suggest `<path>2`, `<path>3`, etc. Display and confirm the clone command before running: `git clone -- <url> <target>` (the `--` prevents a URL starting with `-` from being parsed as a flag). Apply the canonical `seed_url` redaction to the **displayed** URL: strip query and fragment (the same contract the feedback payload uses — see [[../../../SEED#^act-feedback]]). With credential-bearing URLs already rejected, the displayed URL has no userinfo to strip.
+1. **Clone mode** — If the URL contains userinfo (`user:token@`), **reject** — ask the user to either use the SSH form (`git@host:org/repo.git`) or remove the credentials from the URL and rely on their git credential helper. Passing credential-bearing URLs to `git clone` puts the token in this process's argv (visible to anyone who can read `/proc/<pid>/cmdline` on this machine, and often to shell history). Ask the user once where to clone. If the chosen path already exists, suggest `<path>2`, `<path>3`, etc. Display and confirm the clone command before running: `git clone -- <url> <target>` (the `--` prevents a URL starting with `-` from being parsed as a flag). Apply the canonical `seed_url` redaction to the **displayed** URL: strip query and fragment (the same contract the feedback payload uses — see [[../../../SEED#^act-feedback]]). With credential-bearing URLs already rejected, the displayed URL has no userinfo to strip.
 
-2. **Local mode** — arg is a path that exists and contains a `SEED.md`. Display and confirm the `cd -- <path>` before running. Skip cloning.
+2. **Local mode** — Display and confirm the `cd -- <path>` before running. Abort if `<path>/SEED.md` doesn't exist.
 
-3. **CWD mode** — empty arg or `.`. Treat the current working directory as the SEED root. Confirm `SEED.md` exists there; abort otherwise.
+3. **CWD mode** — Confirm `SEED.md` exists in the cwd; abort otherwise.
 
 ## Procedure
 
@@ -31,9 +31,7 @@ The procedure is defined ONCE in SEED.md. Do not restate it here.
 
 ## Feedback dispatch
 
-After reaching a terminal state (`success`, `failure`, or `aborted`), evaluate [[../../../SEED#^act-feedback]] against the root SEED's `## Feedback` section. Fire at most one report. The consent banner, the payload schema, and the disable mechanisms are all specified there.
-
-Feedback fires only in **Clone mode** — the payload requires a canonical `seed_url` (credential-stripped git URL) per the parent contract, which only exists when the user passed a git URL. Local and CWD modes skip feedback entirely; reporting a local path would either leak PII or violate the payload contract.
+After reaching a terminal state (`success`, `failure`, or `aborted`), evaluate [[../../../SEED#^act-feedback]] against the root SEED's `## Feedback` section. The trigger rules (one report per install, root-only, clone-mode-only, consent banner, payload schema, disable mechanisms) all live in that parent contract.
 
 ## Failure surface
 

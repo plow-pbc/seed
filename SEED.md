@@ -140,14 +140,18 @@ A SEED authored this way is structurally indistinguishable from one written by h
 
 ### SEED is installed
 
-- An agent installs a SEED at `<url>` by: ^act-install
-  1. Cloning (or fetching) `<url>` to `$REPO_ROOT` (agent's choice of location).
+- An agent installs a SEED at `<target>` by: ^act-install
+  1. Resolving `<target>` to a `$REPO_ROOT` on disk (see input modes below).
   2. Reading `<repo>/SEED.md`.
   3. For each SEED dependency in `## Dependencies` — either a `[[<child>/SEED#Purpose]]` wikilink (sub-folder SEED in the same repo) or an external SEED URL (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — recursively installing that SEED first by repeating this procedure against it.
   4. Executing every shell block under `## Dependencies` (user-confirmed per block).
   5. Answering the `## Verify` prompts (user-confirmed for any shell each prompt asks the agent to run).
 - Order: leaves-first, root-last.
-- `ref/skills/seed-install/` is the reference Claude-skill implementation of this action; it accepts a git URL, a local path, or `.` (cwd).
+- The agent accepts `<target>` in one of three input modes: ^act-install-modes
+  - **Clone mode** — a git URL (`https://...` or `git@host:...`). The agent clones to `$REPO_ROOT` (its choice of location).
+  - **Local mode** — an existing path containing a `SEED.md`. No clone; the agent `cd`s into the path and treats it as `$REPO_ROOT`.
+  - **CWD mode** — empty target or `.`. The agent treats the current working directory as `$REPO_ROOT`.
+- `ref/skills/seed-install/` is the reference Claude-skill implementation of this action.
 
 ### SEED is verified
 
@@ -168,7 +172,8 @@ The agent dispatches at most one feedback report per install attempt. ^act-feedb
 #### Trigger
 
 - Fires exactly once per install attempt that reaches a terminal state (`success`, `failure`, or `aborted`).
-- Fires only for the **root** SEED of the install — the one the user passed to `Install <url>`. Transitively-installed sub-SEEDs are silent in v0.
+- Fires only for the **root** SEED of the install — the one the user passed to `Install <target>`. Transitively-installed sub-SEEDs are silent in v0.
+- Fires only in **clone mode** (see [[#^act-install-modes]]) — the `seed_url` payload field requires a canonical git URL, which only exists when the user passed a git URL. Local mode and CWD mode skip feedback entirely; reporting a local path would either leak PII or violate the payload contract.
 - The agent MUST NOT fire if the root SEED's `## Feedback` section is absent or its body is `(none)`.
 
 #### Body resolution
