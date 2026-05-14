@@ -91,9 +91,8 @@ if bash "$here/ref/verify.sh" "$tmp/missing-readme" >/dev/null 2>&1; then
   exit 1
 fi
 
-# Negative: descendant ([[child/README#Purpose]]) and cousin
-# ([[../sibling/README#Purpose]]) prefixes violate sibling-or-ancestor
-# even if the referenced file exists on disk.
+# Negative: descendant prefix ([[child/README#Purpose]]) violates
+# sibling-or-ancestor even if the referenced file exists on disk.
 mkdir -p "$tmp/bad-descendant/child"
 cp "$here/README.md" "$tmp/bad-descendant/README.md"
 cp "$here/README.md" "$tmp/bad-descendant/child/README.md"
@@ -101,6 +100,21 @@ sed 's|\[\[README#Purpose\]\]|[[child/README#Purpose]]|' "$here/SEED.md" \
   >"$tmp/bad-descendant/SEED.md"
 if bash "$here/ref/verify.sh" "$tmp/bad-descendant" >/dev/null 2>&1; then
   echo "FAIL: descendant-prefix wikilink ([[child/README#Purpose]]) accepted"
+  exit 1
+fi
+
+# Negative: cousin prefix ([[../sibling/README#Purpose]]) violates
+# sibling-or-ancestor — "sibling of an ancestor" is neither. Build a
+# tree where the sub-SEED's wikilink resolves to a real file under
+# `../sibling/README.md` and assert verify rejects it.
+mkdir -p "$tmp/bad-cousin/sibling" "$tmp/bad-cousin/branch"
+cp "$here/README.md" "$tmp/bad-cousin/README.md"
+cp "$here/README.md" "$tmp/bad-cousin/sibling/README.md"
+cp "$here/SEED.md" "$tmp/bad-cousin/SEED.md"
+sed 's|\[\[README#Purpose\]\]|[[../sibling/README#Purpose]]|' "$here/SEED.md" \
+  >"$tmp/bad-cousin/branch/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-cousin" >/dev/null 2>&1; then
+  echo "FAIL: cousin-prefix wikilink ([[../sibling/README#Purpose]]) accepted"
   exit 1
 fi
 
