@@ -13,7 +13,7 @@ NO file writes, NO `mkdir`, NO `git init` until the user has approved the drafte
 
 ## Checklist
 
-Create one task per item (TaskCreate) and complete in order:
+Track one task per item in the agent's task tracker and complete in order:
 
 1. Establish capability + target path (Step 1).
 2. Reconnaissance probes — read-only, batch-confirmed, sequential (Step 2).
