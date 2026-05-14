@@ -54,7 +54,7 @@ For each fact:
 
 ## Step 4 — Draft `SEED.md` + `README.md`
 
-Draft `SEED.md` directly against the canonical schema in [[../../../SEED#^obj-seedmd]] (one `# Purpose` H1 whose body is only a wikilink to `README#Purpose`; H2 sequence per the schema; `## Dependencies` ordered per [[../../../SEED#^obj-deps-order]]; `## Verify` is natural-language prompts per [[../../../SEED#^obj-verify]]). Do not transcribe the schema into this skill — read the parent contract, follow it, fail loudly if anything in the draft would disagree with it. This is the single source of truth: when the convention changes, the draft changes with it.
+Draft `SEED.md` directly against the canonical schema in [[../../../SEED#^obj-seedmd]] and the linked Dependencies/Objects/Actions/Verify object rows. Do not transcribe the schema into this skill — read the parent contract, follow it, fail loudly if anything in the draft would disagree with it. This is the single source of truth: when the convention changes, the draft changes with it.
 
 Draft `README.md` to this short shape (the convention is mostly free-form here):
 
