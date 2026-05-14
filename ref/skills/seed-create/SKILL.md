@@ -149,7 +149,7 @@ git commit -m "feat: bootstrap SEED for <capability>"
 
 ## Step 8 — Self-verify
 
-Apply the three structural Verify prompts from [[../../../SEED#^obj-verify]] (the parent convention's `## Verify` section) to the new tree. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg:
+Apply the three structural Verify prompts from [[../../../SEED#Verify]] (the parent convention's `## Verify` section — the prompt list itself, not the `^obj-verify` Object definition) to the new tree. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg:
 
 ```bash
 bash <path-to-this-repo>/ref/verify.sh <target-path>
