@@ -102,16 +102,12 @@ Draft `README.md` to this short shape (the convention is mostly free-form here):
 
 <one-paragraph user-written prose: what is it, why does it exist>
 
-## Install
-
-Tell any AI agent:
-
-> Install `<git-url-after-publish>`
-
 ## License
 
 <user-chosen — default MIT>
 ```
+
+No `## Install` in the draft — the install URL doesn't exist until after Step 9's `gh repo create` + push, so a placeholder committed now ships as broken instructions. The user MAY add `## Install` after publishing.
 
 Present both files to the user *in full* and ask:
 
