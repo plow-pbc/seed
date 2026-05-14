@@ -5,7 +5,6 @@
 ## Dependencies
 
 - Claude Code v1.0+ with skill loading enabled. Surfaced to the user; the SEED MAY describe install but MUST NOT assume the agent can run it without confirmation.
-- The SEED convention at [[../../../SEED#Purpose]] — this skill is one realization of that convention's [[../../../SEED#^act-author]] action.
 
 ## Objects
 
@@ -22,10 +21,6 @@
 - Tier 1 (auto-fill, no question), Tier 2 (closed-choice confirm), Tier 3 (open question). The skill's interview pattern for resolving derived facts versus user-only knowledge.
 
 ## Actions
-
-### Skill is loaded
-
-The host (Claude Code) loads this skill when the user types `/seed-create` or the description's triggers fire. The skill announces itself, then follows its checklist. ^act-load-create
 
 ### SEED is authored
 

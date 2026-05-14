@@ -6,7 +6,6 @@
 
 - Claude Code v1.0+ with skill loading enabled.
 - `git` on the host (for clone-mode installs).
-- The SEED convention at [[../../../SEED#Purpose]] — this skill is one realization of that convention's [[../../../SEED#^act-install]] action.
 
 ## Objects
 
@@ -20,13 +19,9 @@
 
 ### Input modes ^obj-modes-install
 
-- `Clone mode` (git URL → clone → `cd`), `Local mode` (existing path with `SEED.md`), `CWD mode` (`.` or empty arg). The first sanitizes URL userinfo before display; all three pass user input as `argv`, never interpolated.
+- `Clone mode` (git URL → clone → `cd`), `Local mode` (existing path with `SEED.md`), `CWD mode` (`.` or empty arg). Clone mode rejects URLs with userinfo, query, or fragment before display or execution (per [[../../../SEED#^act-install-clone-url]]); all three pass user input as `argv`, never interpolated.
 
 ## Actions
-
-### Skill is loaded
-
-The host (Claude Code) loads this skill when the user types `/seed-install` or the description's triggers fire. ^act-load-install
 
 ### SEED is installed
 
