@@ -58,4 +58,16 @@ if bash "$here/ref/verify.sh" "$tmp/bad-purpose" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Negative: a tree where the root SEED.md is valid but a nested
+# SEED.md is malformed must be rejected (verify walks the whole tree,
+# not just the root).
+mkdir -p "$tmp/bad-child/sub dir"
+cp "$here/README.md" "$tmp/bad-child/README.md"
+cp "$here/SEED.md" "$tmp/bad-child/SEED.md"
+awk '/^## Verify$/{exit} {print}' "$here/SEED.md" >"$tmp/bad-child/sub dir/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-child" >/dev/null 2>&1; then
+  echo "FAIL: tree with malformed sub-SEED accepted"
+  exit 1
+fi
+
 echo "ok"
