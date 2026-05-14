@@ -97,7 +97,7 @@ A property of any moment in an Action that requires user input. The tier names h
 | Tier | When | User input shape |
 |---|---|---|
 | `tier-1` | Unambiguous evidence; derivable from a single source. | None. Agent fills in and reports: `Wrote <fact> to <location>.` (no prompt). |
-| `tier-2` | A real choice exists, but the choice space is finite. | Closed-choice confirm: yes/no for a shell block, or a 2–4 option multi-choice. |
+| `tier-2` | A real choice exists, but the choice space is finite. | Closed-choice confirm: yes/no for a shell block (displayed in full before the prompt, never elided), or a 2–4 option multi-choice. |
 | `tier-3` | Only the user knows. Open prose required. | Open question with no canned options. SHOULD surface estimated cost (disk, time, API spend) when the answer commits to a heavy install path. |
 
 The cross-cutting input points this convention standardizes:
@@ -105,7 +105,7 @@ The cross-cutting input points this convention standardizes:
 - All shell blocks under `## Dependencies` are `tier-2` (per-block confirmation).
 - All shell-running prompts in `## Verify` are `tier-2` (same gate as Dependencies).
 - The Purpose paragraph in `^act-author` is `tier-3` (user-only knowledge).
-- Cost-surfacing for heavy installs (>1GB disk, multi-hour runtime, paid API quota) is `tier-3` (the user must see the cost and choose, not silently inherit a default).
+- Cost-surfacing for heavy installs (material disk, runtime, or paid API cost) is `tier-3` (the user must see the cost and choose, not silently inherit a default).
 
 `tier-1` moments are silent: the agent acts and reports. `tier-2` and `tier-3` moments MUST be visible to the user before the agent advances.
 

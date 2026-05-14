@@ -49,7 +49,7 @@ On batch-approval, execute sequentially. If any probe isn't obviously read-only,
 
 For each fact:
 
-- **Auto-fill probe-derived facts** with a one-line rolling diff — e.g. `Wrote 'GPU: NVIDIA A100, ≥40GB VRAM' to ## Dependencies > hardware. Override?`
+- **Auto-fill probe-derived facts** with a one-line rolling diff — e.g. `Wrote 'GPU: NVIDIA A100, ≥40GB VRAM' to ## Dependencies > hardware.` (no prompt; `tier-1` is silent per [[../../../SEED#^obj-tier]] — the user can edit the draft at Step 4's approval gate)
 - **Ask the user** only when the agent is choosing policy (which versions to pin, what counts as a `## Verify` success, sub-SEED decomposition, feedback opt-in) or lacks the information (the Purpose paragraph, natural names for objects/actions). Prefer closed multi-choice for binary-ish picks; prose for open intent.
 
 ## Step 4 — Draft `SEED.md` + `README.md`
