@@ -95,19 +95,26 @@ Operationally, when an inspection probe surfaces a secret despite the parent rul
 
 After draft approval, run each block with user confirmation. Writes are NOT batched the way read-only probes were — each shell block displays and confirms individually. The target path MUST NOT already exist; `mkdir` (without `-p`) is intentional so an existing directory fails the run loudly rather than silently committing unrelated contents on top.
 
-Verify the convention's three structural checks against the new tree **before** `git commit` — a failed verify means structural drift in the draft, and committing first leaves a non-conforming initial commit in the new SEED's history. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg (without the arg, `ref/verify.sh` verifies the convention repo itself, not the new SEED):
+Verify the convention's three structural checks against the new tree **before** `git commit` — a failed verify means structural drift in the draft, and committing first leaves a non-conforming initial commit in the new SEED's history. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg (without the arg, `ref/verify.sh` verifies the convention repo itself, not the new SEED).
+
+**Bootstrap** — runs exactly once, on the first approval:
 
 ```bash
 mkdir -- "<target-path>"
 cd -- "<target-path>"
 git init
-# Write SEED.md, README.md, and (only if the user requested it) ref/verify.sh
+```
+
+**Write-verify-commit** — runs once per approved draft. After a verify failure, the next pass re-runs *only* this block; the bootstrap above is not repeated (`mkdir` would fail on the now-existing directory):
+
+```bash
+# (Re)write SEED.md, README.md, and (only if the user requested it) ref/verify.sh
 bash "<path-to-this-repo>/ref/verify.sh" "$PWD"
 git add .
 git commit -m "feat: bootstrap SEED for <capability>"
 ```
 
-On verify fail, surface the specific failure and offer to amend the draft (which loops back to Step 4's draft-approval gate); the directory and `git init` stay in place, the files are rewritten on the next pass, and `git commit` only runs once verify passes.
+On verify fail, surface the specific failure and offer to amend the draft (which loops back to Step 4's draft-approval gate). The directory and `git init` stay in place across retries; only the write-verify-commit block re-runs, and `git commit` only fires once verify passes.
 
 ## Step 8 — Hand-off
 
