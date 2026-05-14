@@ -128,7 +128,7 @@ If the user names sub-capabilities that warrant their own SEED, add one TODO bul
 During reconnaissance and drafting, NEVER include literal secret values in any drafted file. Specifically:
 
 - Env vars matching `*_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD`, `*_URL`, `*_URI`, `*_CONNECTION_STRING`, `*_DSN` (connection-string env vars often embed credentials in userinfo).
-- URI userinfo — any URL value of the form `scheme://user:password@host/...`. Strip the `user:password@` segment before showing or storing. `docker compose config` and similar reconnaissance probes routinely print these.
+- URI credential-bearing components — any URL value of the form `scheme://user:password@host/path?...#...`. Strip userinfo (`user:password@`), query, and fragment before showing or storing — match the canonical `seed_url` redaction at [[../../../SEED#^act-feedback]]. `docker compose config` and similar reconnaissance probes routinely print these.
 - Paths under `~/.ssh/`, `~/.aws/credentials`, `~/.config/gh/hosts.yml`, `~/.netrc`.
 - Anything matching `sk-...`, `ghp_...`, `xox[abp]-...`, AWS `AKIA.../ASIA...`, JWTs.
 

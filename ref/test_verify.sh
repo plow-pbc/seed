@@ -56,6 +56,18 @@ cp "$tmp/ok/SEED.md"   "$tmp/sub-nl/SEED.md"
 cp "$tmp/ok/README.md" "$tmp/sub-nl/child/README.md"
 cp "$tmp/ok/SEED.md"   "$tmp/sub-nl/child/SEED.md"
 
+# Positive recursive fixture: child SEED that correctly OMITS
+# `## Normative Language` (inheriting from root) must be accepted.
+mkdir -p "$tmp/sub-ok/child"
+cp "$tmp/ok/README.md" "$tmp/sub-ok/README.md"
+cp "$tmp/ok/SEED.md"   "$tmp/sub-ok/SEED.md"
+cp "$tmp/ok/README.md" "$tmp/sub-ok/child/README.md"
+awk '
+  /^## Normative Language$/ { skip=1; next }
+  skip && /^## / { skip=0 }
+  !skip { print }
+' "$tmp/ok/SEED.md" >"$tmp/sub-ok/child/SEED.md"
+
 bash "$here/ref/verify.sh" "$tmp/ok" >/dev/null \
   || { echo "FAIL: conforming fixture rejected"; exit 1; }
 
@@ -68,5 +80,8 @@ if bash "$here/ref/verify.sh" "$tmp/sub-nl" >/dev/null 2>&1; then
   echo "FAIL: sub-SEED with ## Normative Language accepted"
   exit 1
 fi
+
+bash "$here/ref/verify.sh" "$tmp/sub-ok" >/dev/null \
+  || { echo "FAIL: positive recursive fixture (child omits ## Normative Language) rejected"; exit 1; }
 
 echo "ok"

@@ -14,7 +14,7 @@ In a world where software is free, the value will be the spec. SEED is a common,
 
 This repo is the base SEED. The convention lives in [`SEED.md`](SEED.md) — RFC 2119 normative, hierarchical, recursive (every folder gets a `SEED.md`).
 
-Every SEED has the same shape: `## Dependencies → ## Objects → ## Actions → ## Verify`, plus optional `## Feedback`, `## Open`, `## Non-Goals`. The canonical grammar with RFC 2119 qualifiers lives in [`SEED.md`](SEED.md) at `^seed-grammar`. Plain markdown. No DB. No embeddings. No runtime.
+Every SEED follows the canonical grammar in [`SEED.md`](SEED.md) at `^seed-grammar`. Plain markdown. No DB. No embeddings. No runtime.
 
 The trick: the format describes itself in the same language it describes everything else. An agent that can read this repo's SEED can read any SEED.
 

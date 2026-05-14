@@ -230,6 +230,7 @@ A deterministic bash implementation of these three prompts lives at [`ref/verify
 - No `/wrapup` skill in v1. Closing out an install (commits, push, post-install report cleanup) is still natural-language. ^o-wrapup
 - No pre-commit drift hook in v0. ^o-hook
 - Block-ID generation specifics (max-length, collision handling) deferred to v2 when `/seed-create` ships its own block-ID generator. ^o-blockid
+- No CI. macOS/BSD awk portability of `ref/verify.sh` is exercised only on the author's dev machine; a `.github/workflows/test.yml` running `just test` on `ubuntu-latest` and `macos-latest` is the planned remedy and tracked separately. ^o-ci
 
 ## Non-Goals
 
