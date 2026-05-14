@@ -62,8 +62,12 @@ while IFS= read -r -d '' f; do
     || { echo "FAIL H1 not exactly '# Purpose': $f"; fail=1; continue; }
   test "$(echo "$pb" | wc -l)" -eq 1 \
     || { echo "FAIL Purpose body not a single non-blank line: $f"; fail=1; continue; }
-  echo "$pb" | grep -qE 'README#Purpose' \
-    || { echo "FAIL Purpose body missing README#Purpose wikilink: $f"; fail=1; continue; }
+  # Body must be ONLY a sibling-or-ancestor README#Purpose wikilink, per
+  # SEED.md ## Verify check 3. The recommended `> See [[...]].` blockquote
+  # form is the only allowed prose decoration; anything else is "description"
+  # which the contract forbids.
+  echo "$pb" | grep -qE '^(> *)?(See *)?\[\[[A-Za-z0-9_./-]*README#Purpose\]\]\.?$' \
+    || { echo "FAIL Purpose body not the canonical README#Purpose wikilink form: $f"; fail=1; continue; }
   echo "$h2" | grep -E '^## (Dependencies|Objects|Actions|Verify)$' | diff - \
        <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
     || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }

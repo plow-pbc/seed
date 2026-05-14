@@ -40,4 +40,22 @@ bash "$here/ref/verify.sh" "$tmp/has space" >/dev/null \
   && bash "$here/ref/verify.sh" -seed >/dev/null) \
   || { echo "FAIL: relative target path starting with '-' rejected"; exit 1; }
 
+# Negative: a `# Purpose` body with extra description prose around the
+# wikilink must be rejected. The contract says the body is ONLY the
+# sibling-or-ancestor README#Purpose wikilink (`> See [[...]].` form
+# allowed); anything more is "description".
+mkdir "$tmp/bad-purpose"
+cp "$here/README.md" "$tmp/bad-purpose/README.md"
+awk '
+  BEGIN { swap=0 }
+  /^> See \[\[README#Purpose\]\]\.$/ && !swap {
+    print "This SEED is special. See [[README#Purpose]] for more."; swap=1; next
+  }
+  { print }
+' "$here/SEED.md" >"$tmp/bad-purpose/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-purpose" >/dev/null 2>&1; then
+  echo "FAIL: SEED.md with extra prose in # Purpose body accepted"
+  exit 1
+fi
+
 echo "ok"
