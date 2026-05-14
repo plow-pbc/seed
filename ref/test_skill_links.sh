@@ -5,11 +5,20 @@
 # wrong relative depth that would otherwise only surface at install time.
 
 set -eu
+shopt -s nullglob
 
 here=$(cd "$(dirname "$0")/.." && pwd)
 fail=0
 
-for skill in "$here"/ref/skills/*/SKILL.md; do
+# Materialize the glob so a zero-match expansion fails loud instead of
+# iterating over the literal raw pattern.
+skills=("$here"/ref/skills/*/SKILL.md)
+if [ ${#skills[@]} -eq 0 ]; then
+  echo "FAIL: no ref/skills/*/SKILL.md files matched — refusing to print ok"
+  exit 1
+fi
+
+for skill in "${skills[@]}"; do
   skill_dir=$(dirname "$skill")
   while read -r raw; do
     link=${raw#[[}; link=${link%]]}
