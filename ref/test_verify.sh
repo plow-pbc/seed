@@ -122,9 +122,12 @@ bash "$here/ref/verify.sh" "$tmp/has space" >/dev/null \
   || { echo "FAIL: SEED.md in spaced subdir rejected (find walk split)"; exit 1; }
 
 # Regression: a relative target path beginning with `-` must not be
-# parsed as a flag by verify.sh's `cd` (uses `cd --`).
-(cd "$tmp" && mkdir -- -seed && cp -- "$here/README.md" "$here/SEED.md" -seed/ \
-  && bash "$here/ref/verify.sh" -seed >/dev/null) \
+# parsed as a flag by verify.sh's `cd` (uses `cd --`). The fixture's
+# absolute path (`$tmp/-seed`) starts with `/`, so make_root_fixture
+# handles it normally; the `-`-as-flag exposure is purely at the
+# verify.sh call site, where `-seed` is the relative arg.
+make_root_fixture "$tmp/-seed"
+(cd "$tmp" && bash "$here/ref/verify.sh" -seed >/dev/null) \
   || { echo "FAIL: relative target path starting with '-' rejected"; exit 1; }
 
 # Negative: a `# Purpose` body with extra description prose around the
