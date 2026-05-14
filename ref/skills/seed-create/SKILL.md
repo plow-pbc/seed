@@ -86,7 +86,7 @@ If the user names sub-capabilities that warrant their own SEED, add one TODO bul
 
 Two rules, both load-bearing:
 
-**1. Probes (Step 2) MUST NOT dump raw secret values into the transcript.** Once a secret value enters the agent's tool output, no later redaction step can recall it — it's already in the conversation context. Forbidden probes: `env` / `printenv` without a specific var name, `cat ~/.ssh/*`, `cat ~/.aws/credentials`, `cat ~/.netrc`, `docker compose config` (resolves env values inline), `gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`. Use presence/name-only probes instead: `printenv DATABASE_URL >/dev/null && echo 'set'`, `test -f ~/.aws/credentials && echo 'present'`, `env | awk -F= '{print $1}'` (names only).
+**1. Probes (Step 2) MUST NOT dump raw secret values into the transcript.** Once a secret value enters the agent's tool output, no later redaction step can recall it — it's already in the conversation context. Forbidden probes: `env` / `printenv` without a specific var name, `cat ~/.ssh/*`, `cat ~/.aws/credentials`, `cat ~/.netrc`, `docker compose config` (resolves env values inline), `gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`, `git remote -v`, `git config --get remote.*.url` (an HTTPS remote like `https://user:token@host/...` is a credential the user almost never intended to share with the transcript). Use presence/name-only probes instead: `printenv DATABASE_URL >/dev/null && echo 'set'`, `test -f ~/.aws/credentials && echo 'present'`, `env | awk -F= '{print $1}'` (names only), `git remote` (names only — no URLs).
 
 **2. The drafted `SEED.md` / `README.md` MUST NOT include literal secret values.** Specifically:
 
