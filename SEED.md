@@ -147,7 +147,7 @@ A SEED authored this way is structurally indistinguishable from one written by h
   5. Answering the `## Verify` prompts (user-confirmed for any shell each prompt asks the agent to run).
 - Order: leaves-first, root-last.
 - The agent accepts `<target>` in one of three input modes: ^act-install-modes
-  - **Clone mode** — a git URL (`https://...` or `git@host:...`). The agent clones to `$REPO_ROOT` (its choice of location).
+  - **Clone mode** — a git URL (`https://...` or `git@host:...`). The agent clones to `$REPO_ROOT` (its choice of location). The clone URL MUST NOT contain userinfo (`user:token@host/...`), query (`?...`), or fragment (`#...`) components — `git clone <url>` puts the whole URL into process argv (visible via `/proc/<pid>/cmdline` and shell history), and those three URL parts are the canonical carriers of credentials and session-scoped identifiers. The agent MUST reject any such URL and ask for a plain `https://host/org/repo[.git]` or SSH (`git@host:org/repo.git`) form, relying on the user's git credential helper for auth. ^act-install-clone-url
   - **Local mode** — an existing path containing a `SEED.md`. No clone; the agent `cd`s into the path and treats it as `$REPO_ROOT`.
   - **CWD mode** — empty target or `.`. The agent treats the current working directory as `$REPO_ROOT`.
 - `ref/skills/seed-install/` is the reference Claude-skill implementation of this action.
