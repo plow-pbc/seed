@@ -104,7 +104,7 @@ mkdir -- "<target-path>"
 cd -- "<target-path>"
 git init
 # Write SEED.md, README.md, and (only if the user requested it) ref/verify.sh
-bash "<path-to-this-repo>/ref/verify.sh" "<target-path>"
+bash "<path-to-this-repo>/ref/verify.sh" "$PWD"
 git add .
 git commit -m "feat: bootstrap SEED for <capability>"
 ```
