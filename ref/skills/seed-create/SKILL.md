@@ -36,34 +36,14 @@ If the chosen path already exists, suggest `<path>2`, `<path>3`, etc.
 
 ## Step 2 — Reconnaissance sweep
 
-Based on the capability name, enumerate read-only probes from these families:
-
-**Cwd / repo probes** (if the capability is "this repo" or a named codebase): `package.json`, `pyproject.toml`, `Cargo.toml`, `requirements.txt`, `Dockerfile`, `compose.yml`, `.python-version`, `.nvmrc`, `flake.nix`, `go.mod`, `Makefile`, `justfile`.
-
-**System probes:**
-
-- `uname -a`
-- macOS: `sw_vers`, `system_profiler SPHardwareDataType`
-- Linux: `lscpu`, `free -h`
-- `nvidia-smi` (if GPU expected)
-- `df -h ~`
-- `which <relevant-tool>` and `<tool> --version` for each named tool
-
-**Capability-specific probes** (derived from the capability name):
-
-- "ollama + llama3" → `ollama list`, `ls ~/.ollama/models/`
-- "postgres" → `pg_isready`, `psql --version`
-- "docker compose stack" → `docker compose ps`, `docker compose images`
-- Ask before adding probes that aren't obviously read-only.
-
-Present the full probe list to the user as one batch:
+Derive read-only probes from the capability name — cwd manifests, system info, hardware/tool versions, capability-specific status commands. Present the full probe list to the user as one batch:
 
 > I'd like to run these N read-only probes. OK to run them all?
 > 1. `which ollama`
 > 2. `ollama list`
 > 3. ...
 
-On batch-approval, execute sequentially. If any probe in the batch isn't obviously read-only, split it out and confirm individually before running.
+On batch-approval, execute sequentially. If any probe isn't obviously read-only, split it out and confirm individually before running.
 
 ## Step 3 — Tiered confirmation
 
