@@ -15,14 +15,14 @@ NO file writes, NO `mkdir`, NO `git init` until the user has approved the drafte
 
 Create one task per item (TaskCreate) and complete in order:
 
-1. Establish what capability the user wants to capture.
-2. Pick a name and target path.
-3. Reconnaissance sweep — read-only probes, batch-confirmed, sequentially executed.
-4. Confirm derived facts (auto-fill or ask).
-5. Open-ended interview for the things only the user knows.
-6. Present full draft of `SEED.md` + `README.md` for approval.
-7. On approval: `mkdir`, write files, `git init`, structural self-verify, initial commit.
-8. Print the path and suggested next steps. Do NOT push.
+1. Establish capability + target path (Step 1).
+2. Reconnaissance probes — read-only, batch-confirmed, sequential (Step 2).
+3. Confirm derived facts — auto-fill or ask (Step 3).
+4. Draft `SEED.md` + `README.md` for approval (Step 4), folding in any sub-SEED TODOs to `## Open` (Step 5).
+5. Write, structural self-verify, commit (Step 7).
+6. Hand-off — print path + next steps. Do NOT push (Step 8).
+
+Step 6 — secrets discipline — applies throughout reconnaissance and drafting, not as a separate task.
 
 ## Step 1 — Capability + target path
 
@@ -50,7 +50,7 @@ On batch-approval, execute sequentially. If any probe isn't obviously read-only,
 For each fact:
 
 - **Auto-fill probe-derived facts** with a one-line rolling diff — e.g. `Wrote 'GPU: NVIDIA A100, ≥40GB VRAM' to ## Dependencies > hardware. Override?`
-- **Ask the user** only when the agent is choosing policy (which versions to pin, what counts as a `## Verify` success, sub-SEED decomposition, feedback opt-in) or lacks the information (the Purpose paragraph, natural names for objects/actions). Prefer closed multi-choice for binary-ish picks; prose for open intent — covered in depth in Step 5.
+- **Ask the user** only when the agent is choosing policy (which versions to pin, what counts as a `## Verify` success, sub-SEED decomposition, feedback opt-in) or lacks the information (the Purpose paragraph, natural names for objects/actions). Prefer closed multi-choice for binary-ish picks; prose for open intent.
 
 ## Step 4 — Draft `SEED.md` + `README.md`
 
@@ -70,7 +70,7 @@ Draft `README.md` to this short shape (the convention is mostly free-form here):
 <user-chosen — default MIT>
 ```
 
-No `## Install` in the draft — the install URL doesn't exist until after Step 9's `gh repo create` + push, so a placeholder committed now ships as broken instructions. The user MAY add `## Install` after publishing.
+No `## Install` in the draft — the install URL doesn't exist until after the user publishes the repo, so a placeholder committed now ships as broken instructions. The user MAY add `## Install` after publishing.
 
 Present both files to the user *in full* and ask:
 
