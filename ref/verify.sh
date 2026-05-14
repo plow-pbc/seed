@@ -13,7 +13,7 @@ set -eu
 # this script), so existing callers (`bash ref/verify.sh` from repo root)
 # work unchanged. Pass a target dir as $1 to verify a different SEED tree —
 # used by /seed-create to self-verify a newly authored SEED.
-cd "${1:-$(dirname "$0")/..}"
+cd -- "${1:-$(dirname "$0")/..}"
 
 # Fence-toggle helpers: strip lines inside ```...``` or ~~~...~~~ fenced
 # code blocks (CommonMark allows 0-3 leading spaces). Two patterns
