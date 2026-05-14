@@ -49,7 +49,7 @@ The convention's named entities — the things that exist when a SEED-conforming
   - **Repo setup commands** — `uv sync`, `prepare.py`, build steps, etc.
 - MAY be empty (heading MUST exist; body MAY be `(none)`).
 - MAY use H3 sub-sections to group related install steps.
-- All shell blocks are `tier-2` ([[#^obj-tier]]): displayed to the user in full and explicitly confirmed before execution.
+- All shell blocks are `tier-2` per [[#^obj-tier]].
 
 ### Objects section
 
@@ -70,7 +70,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 - Verify is a sequence of natural-language prompts the agent reads and follows. The prompts are normative; an OPTIONAL `ref/verify.sh` (see [[#ref/]]) MAY provide a deterministic bash implementation of the same prompts for CI / non-AI callers.
 - Verify is **normatively read-only on installed state** — an authoring contract: the SEED author MUST NOT put state-mutating instructions here.
 - MAY direct the agent to create ephemeral test resources (containers, sandboxes, digital twins); MUST direct cleanup before exit.
-- If a Verify prompt asks the agent to run shell, the agent MUST display the shell and explicitly confirm before execution (`tier-2` per [[#^obj-tier]]). Same trust gate as `## Dependencies` — the read-only guarantee is an authoring contract, not something the agent can prove from the source.
+- If a Verify prompt asks the agent to run shell, the `tier-2` gate at [[#^obj-tier]] applies — same as `## Dependencies`. The read-only guarantee is an authoring contract, not something the agent can prove from the source.
 - Block IDs use `^v-<slug>`.
 
 ### Feedback section
@@ -96,11 +96,11 @@ A property of any moment in an Action that requires user input. The tier names h
 
 | Tier | When | User input shape |
 |---|---|---|
-| `tier-1` | Unambiguous evidence; derivable from a single source. | None. Agent fills in and emits a one-line diff for transparency: `Wrote <fact> to <location>. Override?` |
+| `tier-1` | Unambiguous evidence; derivable from a single source. | None. Agent fills in and reports: `Wrote <fact> to <location>.` (no prompt). |
 | `tier-2` | A real choice exists, but the choice space is finite. | Closed-choice confirm: yes/no for a shell block, or a 2–4 option multi-choice. |
 | `tier-3` | Only the user knows. Open prose required. | Open question with no canned options. SHOULD surface estimated cost (disk, time, API spend) when the answer commits to a heavy install path. |
 
-Actions that take user input MUST declare the tier of each input point. Conventions established here:
+The cross-cutting input points this convention standardizes:
 
 - All shell blocks under `## Dependencies` are `tier-2` (per-block confirmation).
 - All shell-running prompts in `## Verify` are `tier-2` (same gate as Dependencies).
@@ -147,7 +147,7 @@ The verbs performed BY the Objects above.
 
 An agent authors a new SEED for a capability the user names by: ^act-author
 
-1. Interviewing the user one question at a time, using the tier model at [[#^obj-tier]] (probes that yield unambiguous results auto-fill at `tier-1`; detectable facts with a real choice are `tier-2` closed-confirm; purpose paragraphs and naming decisions are `tier-3` open prose). Topics: purpose, hardware/API/software dependencies, named objects, observable actions, and how to verify it works.
+1. Interviewing the user one question at a time, applying the tier model at [[#^obj-tier]]. Topics: purpose, hardware/API/software dependencies, named objects, observable actions, and how to verify it works.
 2. Inspecting the live system read-only to corroborate user answers (e.g. `which`, `nvidia-smi`, reading package manifests). All shell MUST be displayed and user-confirmed per [[#SEED is trusted]]. Inspection probes MUST NOT dump raw secret values into the agent's tool output — once a secret enters the conversation context, no later redaction step can recall it. Forbidden examples: `env` / `printenv` without a specific var name, `cat` of credential files (`~/.ssh/*`, `~/.aws/credentials`, `~/.netrc`), `docker compose config` (resolves env values), `git remote -v` / `git config --get remote.*.url` (HTTPS remotes often carry `user:token@` userinfo), auth-token-print commands (`gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`). Use presence/name-only probes instead — `printenv VAR >/dev/null && echo set`, `test -f <path> && echo present`, `env | awk -F= '{print $1}'`, `git remote` (without `-v`). ^act-author-probes
 3. Drafting `SEED.md` and `README.md` with the canonical structure (one `# Purpose` H1 plus the H2 grammar at [[#^seed-grammar]]), and presenting the draft for user approval before writing.
 4. On approval, creating a new directory at a user-chosen path, writing the files, running `git init`, then running the convention's three structural Verify prompts (from this repo's `SEED.md > ## Verify`) against the new tree to confirm structural conformance — **before** the initial commit, so a verify failure does not leave a non-conforming commit in the new SEED's history. The agent MAY use this repo's `ref/verify.sh` as the deterministic implementation, invoked with the new directory as an explicit target argument: `bash <path-to-this-repo>/ref/verify.sh <new-seed-dir>`. (Without the arg, the script verifies the convention repo itself, not the new tree.) This is the SEED *convention's* verify, not the new SEED's capability-specific verify (which checks the installed system, not the SEED's own structure).
