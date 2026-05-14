@@ -8,3 +8,6 @@
 # Tmp test sandboxes for hooks/skills
 tmp/
 sandbox/
+
+# Local design/plan drafts — never shipped in the feature PR
+docs/plans/

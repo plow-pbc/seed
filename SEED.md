@@ -35,8 +35,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 - A markdown file in every SEED-participating folder. ^obj-seedmd
 - MUST contain exactly one H1: `# Purpose`. All structural headings below MUST be H2 or deeper.
 - The `# Purpose` section's body MUST be **only** a wikilink to the closest sibling-or-ancestor `README.md`'s `## Purpose` section — nothing else. Purpose has one canonical location (the README); duplicating it in SEED.md guarantees drift. The recommended form is a blockquote: `> See [[<relative-path>/README#Purpose]].`
-- MUST contain `## Dependencies`, `## Objects`, `## Actions`, `## Verify` in that order.
-- MAY contain `## Feedback` after `## Verify`, then `## Open` and/or `## Non-Goals` after that.
+- Canonical H2 grammar — required `## Dependencies → ## Objects → ## Actions → ## Verify` (in that order), then any subset of optional `## Feedback`, `## Open`, `## Non-Goals` (in that order). The root SEED.md additionally MUST start with `## Normative Language` (sub-folder SEEDs inherit it). Other H2s are non-conforming. ^seed-grammar
 
 ### Dependencies section
 
@@ -44,7 +43,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 - Within Dependencies, entries SHOULD be ordered: **hardware** first (GPU, RAM, disk), then **API** (keys, accounts, quotas), then **software** (OS, runtimes, packages). Sub-SEED wikilinks slot in by the category of what they install. ^obj-deps-order
 - Contains a mix of:
   - **Sub-SEED wikilinks** (`[[<child>/SEED#Purpose]]`) — for SEEDs in the same repo. Installed by walking the wikilink to the sub-folder. ^obj-deps-wikilink
-  - **External SEED URLs** (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — for SEEDs in separate repos. Installed by treating the URL as a fresh install target (clone, read its `SEED.md`, recurse). ^obj-deps-external
+  - **External SEED URLs** (any HTTPS `https://<host>/<org>/<repo>[.git]` or SSH `git@<host>:<org>/<repo>.git` git URL) — for SEEDs in separate repos. Installed by treating the URL as a fresh install target (clone, read its `SEED.md`, recurse). ^obj-deps-external
   - **External system requirements** — system packages, language runtimes, disk, sudo. Surfaced to the user; the SEED MAY provide install commands, but MUST NOT assume the agent can run them without confirmation.
   - **External non-SEED repo clones** — code from a different git URL that is NOT itself a SEED.
   - **Repo setup commands** — `uv sync`, `prepare.py`, build steps, etc.
@@ -105,6 +104,16 @@ The convention's named entities — the things that exist when a SEED-conforming
 - `ref/` itself does NOT require its own `SEED.md` — it's a code-holding folder, not a sub-SEED. The natural-language contract for the artifact lives in the parent SEED; the code inside `ref/` is one realization of that contract.
 - Alternative full implementations (a different language, a richer toolkit) live in separate repos, linked from `## Open` or wherever appropriate.
 
+### ref/skills/seed-create/
+
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is authored]]. ^obj-skill-create
+- Contains `SKILL.md` (interview-driven authoring flow) and any supporting files.
+
+### ref/skills/seed-install/
+
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is installed]]. ^obj-skill-install
+- Contains `SKILL.md`, which delegates to the natural-language contract in `## Actions > SEED is installed` rather than restating it.
+
 ## Actions
 
 The verbs performed BY the Objects above.
@@ -115,15 +124,33 @@ The verbs performed BY the Objects above.
 - The agent walks `## Dependencies` wikilinks recursively (leaves-first).
 - The agent reads `## Objects` and `## Actions` to understand the system.
 
+### SEED is authored
+
+An agent authors a new SEED for a capability the user names by: ^act-author
+
+1. Interviewing the user (one question at a time) about the capability: its purpose, hardware/API/software dependencies, named objects, observable actions, and how to verify it works.
+2. Inspecting the live system read-only to corroborate user answers (e.g. `which`, `nvidia-smi`, reading package manifests). All shell MUST be displayed and user-confirmed per [[#SEED is trusted]]. Inspection probes MUST NOT dump raw secret values into the agent's tool output — once a secret enters the conversation context, no later redaction step can recall it. Forbidden examples: `env` / `printenv` without a specific var name, `cat` of credential files (`~/.ssh/*`, `~/.aws/credentials`, `~/.netrc`), `docker compose config` (resolves env values), `git remote -v` / `git config --get remote.*.url` (HTTPS remotes often carry `user:token@` userinfo), auth-token-print commands (`gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`). Use presence/name-only probes instead — `printenv VAR >/dev/null && echo set`, `test -f <path> && echo present`, `env | awk -F= '{print $1}'`, `git remote` (without `-v`). ^act-author-probes
+3. Drafting `SEED.md` and `README.md` with the canonical structure (one `# Purpose` H1 plus the H2 grammar at [[#^seed-grammar]]), and presenting the draft for user approval before writing.
+4. On approval, creating a new directory at a user-chosen path, writing the files, running `git init`, then running the convention's three structural Verify prompts (from this repo's `SEED.md > ## Verify`) against the new tree to confirm structural conformance — **before** the initial commit, so a verify failure does not leave a non-conforming commit in the new SEED's history. The agent MAY use this repo's `ref/verify.sh` as the deterministic implementation, invoked with the new directory as an explicit target argument: `bash <path-to-this-repo>/ref/verify.sh <new-seed-dir>`. (Without the arg, the script verifies the convention repo itself, not the new tree.) This is the SEED *convention's* verify, not the new SEED's capability-specific verify (which checks the installed system, not the SEED's own structure).
+5. Once verify passes, creating the initial commit. The agent MUST NOT push or create a remote repo; distribution is the user's choice.
+6. The agent MUST NOT include literal secret values in the drafted SEED. Specifically: env vars matching `*_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD`, `*_URL`, `*_URI`, `*_CONNECTION_STRING`, `*_DSN`; URI userinfo (`scheme://user:password@host/...`); paths under `~/.ssh/`, `~/.aws/credentials`, `~/.config/gh/hosts.yml`, `~/.netrc`; anything matching `sk-...`, `ghp_...`, `xox[abp]-...`, AWS `AKIA.../ASIA...`, JWTs. The agent MAY describe the requirement ("requires `OPENAI_API_KEY` in env") but never the value; if a probe result contains a secret despite step 2's rule, redact it (last 3 chars: `sk-...xY7`) before presenting. ^act-author-secrets
+
+A SEED authored this way is structurally indistinguishable from one written by hand.
+
 ### SEED is installed
 
-- An agent installs a SEED at `<url>` by: ^act-install
-  1. Cloning (or fetching) `<url>` to `$REPO_ROOT` (agent's choice of location).
+- An agent installs a SEED at `<target>` by: ^act-install
+  1. Resolving `<target>` to a `$REPO_ROOT` on disk (see input modes below).
   2. Reading `<repo>/SEED.md`.
-  3. For each SEED dependency in `## Dependencies` — either a `[[<child>/SEED#Purpose]]` wikilink (sub-folder SEED in the same repo) or an external SEED URL (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — recursively installing that SEED first by repeating this procedure against it.
+  3. For each SEED dependency in `## Dependencies` — either a `[[<child>/SEED#Purpose]]` wikilink (sub-folder SEED in the same repo) or an external SEED URL (any HTTPS or SSH git URL per [[#^obj-deps-external]]) — recursively installing that SEED first by repeating this procedure against it.
   4. Executing every shell block under `## Dependencies` (user-confirmed per block).
   5. Answering the `## Verify` prompts (user-confirmed for any shell each prompt asks the agent to run).
 - Order: leaves-first, root-last.
+- The agent accepts `<target>` in one of three input modes: ^act-install-modes
+  - **Clone mode** — a git URL (`https://...` or `git@host:...`). The agent clones to `$REPO_ROOT` (its choice of location). The clone URL MUST NOT contain userinfo (`user:token@host/...`), query (`?...`), or fragment (`#...`) components — `git clone <url>` puts the whole URL into process argv (visible via `/proc/<pid>/cmdline` and shell history), and those three URL parts are the canonical carriers of credentials and session-scoped identifiers. The agent MUST reject any such URL and ask for a plain `https://host/org/repo[.git]` or SSH (`git@host:org/repo.git`) form, relying on the user's git credential helper for auth. ^act-install-clone-url
+  - **Local mode** — an existing path containing a `SEED.md`. No clone; the agent `cd`s into the path and treats it as `$REPO_ROOT`.
+  - **CWD mode** — empty target or `.`. The agent treats the current working directory as `$REPO_ROOT`.
+- `ref/skills/seed-install/` is the reference Claude-skill implementation of this action.
 
 ### SEED is verified
 
@@ -144,7 +171,8 @@ The agent dispatches at most one feedback report per install attempt. ^act-feedb
 #### Trigger
 
 - Fires exactly once per install attempt that reaches a terminal state (`success`, `failure`, or `aborted`).
-- Fires only for the **root** SEED of the install — the one the user passed to `Install <url>`. Transitively-installed sub-SEEDs are silent in v0.
+- Fires only for the **root** SEED of the install — the one the user passed to `Install <target>`. Transitively-installed sub-SEEDs are silent in v0.
+- Fires only in **clone mode** (see [[#^act-install-modes]]) — the `seed_url` payload field requires a canonical git URL, which only exists when the user passed a git URL. Local mode and CWD mode skip feedback entirely; reporting a local path would either leak PII or violate the payload contract.
 - The agent MUST NOT fire if the root SEED's `## Feedback` section is absent or its body is `(none)`.
 
 #### Body resolution
@@ -183,7 +211,7 @@ Verification is a sequence of natural-language prompts the agent reads and answe
 
 1. **README structural check.** Read `README.md`. Does it contain a `## Purpose` H2 outside fenced code blocks? Expected: yes.
 
-2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`), declare RFC 2119 in `## Normative Language`, and have the H2 sequence `## Dependencies → ## Objects → ## Actions → ## Verify` followed by any subset of `## Feedback`, `## Open`, `## Non-Goals` in that order? Expected: yes.
+2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`) and match the canonical H2 grammar at [[#^seed-grammar]] (including the root-only `## Normative Language` requirement)? Expected: yes.
 
 3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-folder SEEDs MAY omit `## Normative Language` (inherited from the root). Expected: yes for all.
 
@@ -196,9 +224,9 @@ A deterministic bash implementation of these three prompts lives at [`ref/verify
 ## Open
 
 - Demo video has not been recorded; the README's poster and mp4 paths are placeholders. ^o-demo
-- No `/populate`, `/wrapup`, or `/install-seed` skill ships in v0. Installation is natural-language: tell any agent "Install <url>". ^o-skills
+- No `/wrapup` skill in v1. Closing out an install (commits, push, post-install report cleanup) is still natural-language. ^o-wrapup
 - No pre-commit drift hook in v0. ^o-hook
-- Block-ID generation specifics (max-length, collision handling) deferred to v1 when `/populate` ships. ^o-blockid
+- Block-ID generation specifics (max-length, collision handling) deferred to v2 when `/seed-create` ships its own block-ID generator. ^o-blockid
 
 ## Non-Goals
 
@@ -207,4 +235,3 @@ A deterministic bash implementation of these three prompts lives at [`ref/verify
 - No backwards-compat migration tooling.
 - No support for non-git distribution (tarballs, mirrors). Both SSH (`git@host:...`) and HTTPS (`https://...`) git URLs are valid install URLs; the agent picks the transport.
 - No version-conflict resolution across SEEDs.
-- No `/populate`, `/wrapup`, `/install-seed`, or pre-commit hook in v0.

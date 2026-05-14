@@ -9,7 +9,11 @@
 
 set -eu
 
-cd "$(dirname "$0")/.."
+# Verify a SEED tree. Default target is the convention repo (the parent of
+# this script), so existing callers (`bash ref/verify.sh` from repo root)
+# work unchanged. Pass a target dir as $1 to verify a different SEED tree —
+# used by /seed-create to self-verify a newly authored SEED.
+cd -- "${1:-$(dirname "$0")/..}"
 
 # Fence-toggle helpers: strip lines inside ```...``` or ~~~...~~~ fenced
 # code blocks (CommonMark allows 0-3 leading spaces). Two patterns
@@ -43,17 +47,15 @@ h2s_of SEED.md | grep -qx '## Normative Language'
 #    body is exactly one non-blank line containing a README#Purpose
 #    wikilink, the four required H2s in order, and a full H2 sequence
 #    that's a subsequence of canonical.
-canonical='## Normative Language
-## Dependencies
-## Objects
-## Actions
-## Verify
-## Feedback
-## Open
-## Non-Goals'
+# The canonical list below MUST match SEED.md > ### SEED.md ^seed-grammar.
+# Pipe-separated so the value survives `awk -v` across awk variants
+# (BSD awk on macOS rejects multi-line -v values).
+canonical='## Normative Language|## Dependencies|## Objects|## Actions|## Verify|## Feedback|## Open|## Non-Goals'
 
 fail=0
-for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
+# NUL-delimited find loop so SEED.md paths containing spaces or newlines
+# survive (a target dir like '/tmp/my seed' would split under for-in $(find)).
+while IFS= read -r -d '' f; do
   h1=$(h1s_of "$f")
   h2=$(h2s_of "$f")
   pb=$(purpose_body_of "$f")
@@ -61,15 +63,52 @@ for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
     || { echo "FAIL H1 not exactly '# Purpose': $f"; fail=1; continue; }
   test "$(echo "$pb" | wc -l)" -eq 1 \
     || { echo "FAIL Purpose body not a single non-blank line: $f"; fail=1; continue; }
-  echo "$pb" | grep -qE 'README#Purpose' \
-    || { echo "FAIL Purpose body missing README#Purpose wikilink: $f"; fail=1; continue; }
+  # Body must be ONLY a sibling-or-ancestor README#Purpose wikilink, per
+  # SEED.md ## Verify check 3. The recommended `> See [[...]].` blockquote
+  # form is the only allowed prose decoration; anything else is "description"
+  # which the contract forbids. The path prefix may only be empty (sibling)
+  # or repeated `../` (strict ancestor) — child / cousin / sibling-of-ancestor
+  # prefixes like `child/`, `../sibling/` are rejected.
+  echo "$pb" | grep -qE '^(> *)?(See *)?\[\[(\.\./)*README#Purpose\]\]\.?$' \
+    || { echo "FAIL Purpose body not a sibling-or-ancestor README#Purpose wikilink: $f"; fail=1; continue; }
+  # Resolve the wikilink to an actual README.md on disk and require it has
+  # the ## Purpose H2 — the wikilink target contract is "*closest*
+  # sibling-or-ancestor README#Purpose", not just any reachable one.
+  readme_rel=$(echo "$pb" | sed -nE 's|.*\[\[((\.\./)*)README#Purpose\]\].*|\1README.md|p')
+  readme_target=$(dirname "$f")/$readme_rel
+  test -f "$readme_target" \
+    || { echo "FAIL Purpose wikilink points to missing README: $f -> $readme_target"; fail=1; continue; }
+  h2s_of "$readme_target" | grep -qx '## Purpose' \
+    || { echo "FAIL referenced README has no ## Purpose H2: $f -> $readme_target"; fail=1; continue; }
+  # Canonicalize the target and walk up from $f's directory; the first
+  # README.md found is the closest sibling-or-ancestor, and the wikilink
+  # MUST resolve to exactly that file. `pwd -P` is portable across macOS
+  # bash and Linux bash without needing GNU realpath.
+  target_abs=$(cd -- "$(dirname -- "$readme_target")" && pwd -P)/README.md
+  closest=
+  d=$(cd -- "$(dirname -- "$f")" && pwd -P)
+  while :; do
+    if [ -f "$d/README.md" ]; then closest=$d/README.md; break; fi
+    parent=$(dirname "$d"); [ "$parent" = "$d" ] && break; d=$parent
+  done
+  [ "$closest" = "$target_abs" ] \
+    || { echo "FAIL Purpose wikilink is not the closest sibling-or-ancestor README: $f -> $target_abs (closest: ${closest:-none})"; fail=1; continue; }
   echo "$h2" | grep -E '^## (Dependencies|Objects|Actions|Verify)$' | diff - \
        <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
     || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }
   echo "$h2" | awk -v canon="$canonical" '
-    BEGIN { n = split(canon, c, "\n"); i = 1 }
+    BEGIN { n = split(canon, c, "|"); i = 1 }
     { while (i <= n && c[i] != $0) i++; if (i > n) exit 1; i++ }
   ' || { echo "FAIL H2 sequence not a subsequence of canonical (or has duplicates): $f"; fail=1; continue; }
-done
+  # Root-vs-child gate: ## Normative Language is required only on the
+  # root SEED.md (checked at line 44 against cwd-relative ./SEED.md)
+  # and forbidden on every nested SEED.md — sub-SEEDs inherit RFC 2119
+  # from the root per ^seed-grammar in SEED.md.
+  if [ "$f" != "./SEED.md" ] && echo "$h2" | grep -qx '## Normative Language'; then
+    echo "FAIL nested SEED.md must not re-declare ## Normative Language: $f"
+    fail=1
+    continue
+  fi
+done < <(find . -path './.git' -prune -o -name 'SEED.md' -print0)
 
 test "$fail" = "0" && echo "tree conforms"
