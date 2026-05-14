@@ -31,9 +31,9 @@ Ask the user, one question at a time:
 
 - "What capability is this SEED capturing? (e.g., 'ollama + llama3 running locally', 'my dotfiles', 'this codebase')"
 - "What's the natural name for the SEED's home directory?"
-- "Where should it live? (default: `$HOME/Hacking/<name>/`)"
+- "Where should it live?"
 
-If the default path exists, suggest `<default>2`, `<default>3`, etc.
+If the chosen path already exists, suggest `<path>2`, `<path>3`, etc.
 
 ## Step 2 — Reconnaissance sweep
 
