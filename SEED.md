@@ -121,17 +121,18 @@ The cross-cutting input points this convention standardizes:
 - An OPTIONAL sub-folder at the repo root holding reference code for the SEED's runnable artifacts. ^obj-ref
 - When a SEED ships reference code (a verify script, a hook, a populate script, etc.), it MUST live in `ref/`. The parent SEED's `## Objects` H3 entries describe the artifacts in prose; `## Actions` describes what each does.
 - `ref/` itself does NOT require its own `SEED.md` — it's a code-holding folder, not a sub-SEED. The natural-language contract for the artifact lives in the parent SEED; the code inside `ref/` is one realization of that contract.
+- A folder INSIDE `ref/` (e.g., `ref/skills/<skill-name>/`) MAY be its own sub-SEED if it has structured contents worth declaring as Objects (named entities) and Verify (structural invariants). The parent SEED's `## Actions` remains the source of truth for the contract; a sub-SEED inside `ref/` describes the realization's own structure without restating the parent. See `^obj-skill-create` and `^obj-skill-install` for examples.
 - Alternative full implementations (a different language, a richer toolkit) live in separate repos, linked from `## Open` or wherever appropriate.
 
 ### ref/skills/seed-create/
 
-- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is authored]]. ^obj-skill-create
-- Contains `SKILL.md` (interview-driven authoring flow) and any supporting files.
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is authored]]. The folder is itself a sub-SEED — see [[ref/skills/seed-create/SEED#Purpose]]. ^obj-skill-create
+- Contains `SKILL.md` (the agent entry point), a local `README.md` (the skill's purpose), a local `SEED.md` (the skill's structural declaration), and any supporting files.
 
 ### ref/skills/seed-install/
 
-- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is installed]]. ^obj-skill-install
-- Contains `SKILL.md`, which delegates to the natural-language contract in `## Actions > SEED is installed` rather than restating it.
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is installed]]. The folder is itself a sub-SEED — see [[ref/skills/seed-install/SEED#Purpose]]. ^obj-skill-install
+- Contains `SKILL.md`, which delegates to the natural-language contract in `## Actions > SEED is installed` rather than restating it; a local `README.md` and `SEED.md` per the sub-SEED pattern.
 
 ## Actions
 
