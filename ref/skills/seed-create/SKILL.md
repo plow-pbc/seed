@@ -21,9 +21,8 @@ Create one task per item (TaskCreate) and complete in order:
 4. Tiered confirmation of derived facts.
 5. Open-ended interview for the things only the user knows.
 6. Present full draft of `SEED.md` + `README.md` for approval.
-7. On approval: `mkdir`, write files, `git init`, initial commit.
-8. Self-verify against the SEED convention's three structural checks.
-9. Print the path and suggested next steps. Do NOT push.
+7. On approval: `mkdir`, write files, `git init`, structural self-verify, initial commit.
+8. Print the path and suggested next steps. Do NOT push.
 
 ## Step 1 — Capability + target path
 
@@ -130,30 +129,25 @@ During reconnaissance and drafting, NEVER include literal secret values in any d
 
 If the capability requires a secret, the SEED MAY describe the requirement ("requires `OPENAI_API_KEY` in env", "requires `DATABASE_URL` in env") but MUST NOT show the value. If a probe result contains a secret, redact it (show only the last 3 chars: `sk-...xY7`) before presenting to the user. For env vars whose names alone could leak structure (e.g. internal hostnames), summarize as a count and category rather than verbatim.
 
-## Step 7 — Write + commit
+## Step 7 — Write, verify, commit
 
-After draft approval, run each block with user confirmation. Writes are NOT batched the way read-only probes were — each shell block displays and confirms individually. The target path MUST NOT already exist; `mkdir` (without `-p`) is intentional so an existing directory fails the run loudly rather than silently committing unrelated contents on top:
+After draft approval, run each block with user confirmation. Writes are NOT batched the way read-only probes were — each shell block displays and confirms individually. The target path MUST NOT already exist; `mkdir` (without `-p`) is intentional so an existing directory fails the run loudly rather than silently committing unrelated contents on top.
+
+Verify the convention's three structural checks against the new tree **before** `git commit` — a failed verify means structural drift in the draft, and committing first leaves a non-conforming initial commit in the new SEED's history. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg (without the arg, `ref/verify.sh` verifies the convention repo itself, not the new SEED):
 
 ```bash
 mkdir -- "<target-path>"
 cd -- "<target-path>"
 git init
 # Write SEED.md, README.md, and (only if the user requested it) ref/verify.sh
+bash "<path-to-this-repo>/ref/verify.sh" "<target-path>"
 git add .
 git commit -m "feat: bootstrap SEED for <capability>"
 ```
 
-## Step 8 — Self-verify
+On verify fail, surface the specific failure and offer to amend the draft (which loops back to Step 4's draft-approval gate); the directory and `git init` stay in place, the files are rewritten on the next pass, and `git commit` only runs once verify passes.
 
-Apply the three structural Verify prompts from [[../../../SEED#^obj-verify]] (the parent convention's `## Verify` section) to the new tree. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg:
-
-```bash
-bash "<path-to-this-repo>/ref/verify.sh" "<target-path>"
-```
-
-Without the arg, `ref/verify.sh` verifies the convention repo itself, not the new SEED. Report pass/fail. On fail, the most likely cause is structural drift in the draft — surface the specific failure and offer to amend (which loops back to Step 4's draft-approval gate).
-
-## Step 9 — Hand-off
+## Step 8 — Hand-off
 
 Print:
 
