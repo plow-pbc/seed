@@ -68,6 +68,11 @@ for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
   echo "$h2" | grep -E '^## (Dependencies|Objects|Actions|Verify)$' | diff - \
        <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
     || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }
+  # Sub-SEEDs MUST NOT declare `## Normative Language` (per ^seed-grammar);
+  # they inherit from the root SEED.
+  if [ "$f" != "./SEED.md" ] && echo "$h2" | grep -qx '## Normative Language'; then
+    echo "FAIL sub-SEED declares ## Normative Language (root-only): $f"; fail=1; continue
+  fi
   echo "$h2" | awk -v canon="$canonical" '
     BEGIN { n = split(canon, c, "|"); i = 1 }
     { while (i <= n && c[i] != $0) i++; if (i > n) exit 1; i++ }
