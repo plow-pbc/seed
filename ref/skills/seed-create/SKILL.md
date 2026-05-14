@@ -117,7 +117,7 @@ Loop on edits until approved. No disk writes during the draft loop.
 
 ## Step 5 — Sub-SEED handling
 
-If the user names sub-capabilities that warrant their own SEED, add one TODO bullet per sub-capability to the draft's `## Open` (e.g. `- TODO: author <child>/SEED.md ^o-<slug>`). Do NOT scaffold the child directory or interview for it in this run — recursive authoring is an explicit non-goal for v1 (see this skill's `## Non-Goals`). The user runs `/seed-create` from inside the parent later when ready.
+If the user names sub-capabilities that warrant their own SEED, add one TODO bullet per sub-capability to the draft's `## Open` (e.g. `- TODO: author <child>/SEED.md ^o-<slug>`). Do NOT scaffold the child directory or interview for it in this run — recursive authoring is an explicit non-goal for v1 (see this skill's `## Non-Goals`).
 
 ## Step 6 — Secrets discipline
 
