@@ -35,8 +35,15 @@ The convention's named entities — the things that exist when a SEED-conforming
 - A markdown file in every SEED-participating folder. ^obj-seedmd
 - MUST contain exactly one H1: `# Purpose`. All structural headings below MUST be H2 or deeper.
 - The `# Purpose` section's body MUST be **only** a wikilink to the closest sibling-or-ancestor `README.md`'s `## Purpose` section — nothing else. Purpose has one canonical location (the README); duplicating it in SEED.md guarantees drift. The recommended form is a blockquote: `> See [[<relative-path>/README#Purpose]].`
-- MUST contain `## Dependencies`, `## Objects`, `## Actions`, `## Verify` in that order.
-- MAY contain `## Feedback` after `## Verify`, then `## Open` and/or `## Non-Goals` after that.
+- The H2 sequence MUST match the canonical grammar below. Headings present MUST appear in this order; OPTIONAL headings MAY be omitted but MUST NOT be reordered. ^seed-grammar
+  1. `## Normative Language` — REQUIRED on the root SEED only; sub-SEEDs MUST NOT re-declare (they inherit from the root, per [[#Normative Language]]).
+  2. `## Dependencies` — REQUIRED.
+  3. `## Objects` — REQUIRED.
+  4. `## Actions` — REQUIRED.
+  5. `## Verify` — REQUIRED.
+  6. `## Feedback` — OPTIONAL.
+  7. `## Open` — OPTIONAL.
+  8. `## Non-Goals` — OPTIONAL.
 
 ### Dependencies section
 
@@ -207,9 +214,9 @@ Verification is a sequence of natural-language prompts the agent reads and answe
 
 1. **README structural check.** Read `README.md`. Does it contain a `## Purpose` H2 outside fenced code blocks? Expected: yes.
 
-2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`), declare RFC 2119 in `## Normative Language`, and have the H2 sequence `## Dependencies → ## Objects → ## Actions → ## Verify` followed by any subset of `## Feedback`, `## Open`, `## Non-Goals` in that order? Expected: yes.
+2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`), declare RFC 2119 in `## Normative Language`, and match the canonical H2 grammar at [[#^seed-grammar]]? Expected: yes.
 
-3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-folder SEEDs MAY omit `## Normative Language` (inherited from the root). Expected: yes for all.
+3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-SEEDs MUST omit `## Normative Language` per [[#^seed-grammar]]. Expected: yes for all.
 
 A deterministic bash implementation of these three prompts lives at [`ref/verify.sh`](ref/verify.sh) — run it from the repo root for a CI-friendly exit-code answer. The natural-language prompts above are normative; `ref/verify.sh` is one reference implementation.
 

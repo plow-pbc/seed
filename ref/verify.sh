@@ -47,8 +47,11 @@ h2s_of SEED.md | grep -qx '## Normative Language'
 #    body is exactly one non-blank line containing a README#Purpose
 #    wikilink, the four required H2s in order, and a full H2 sequence
 #    that's a subsequence of canonical.
-# Pipe-separated so the value survives `awk -v` across awk variants
-# (BSD awk on macOS rejects multi-line -v values).
+# Canonical H2 grammar. The natural-language source of truth is
+# SEED.md > ## Objects > SEED.md > ^seed-grammar; keep this list in
+# sync with that section. Pipe-separated so the value survives
+# `awk -v` across awk variants (BSD awk on macOS rejects multi-line
+# -v values).
 canonical='## Normative Language|## Dependencies|## Objects|## Actions|## Verify|## Feedback|## Open|## Non-Goals'
 
 fail=0
