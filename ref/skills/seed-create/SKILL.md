@@ -54,7 +54,7 @@ Based on the capability name, enumerate read-only probes from these families:
 
 - "ollama + llama3" → `ollama list`, `ls ~/.ollama/models/`
 - "postgres" → `pg_isready`, `psql --version`
-- "docker compose stack" → `docker compose ps`, `docker compose config`
+- "docker compose stack" → `docker compose ps`, `docker compose images`
 - Ask before adding probes that aren't obviously read-only.
 
 Present the full probe list to the user as one batch:
