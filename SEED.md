@@ -213,7 +213,7 @@ Verification is a sequence of natural-language prompts the agent reads and answe
 
 2. **Root SEED structural check.** Read `SEED.md`. Outside fenced code blocks, does it contain exactly one H1 (`# Purpose`) and match the canonical H2 grammar at [[#^seed-grammar]] (including the root-only `## Normative Language` requirement)? Expected: yes.
 
-3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-folder SEEDs MAY omit `## Normative Language` (inherited from the root). Expected: yes for all.
+3. **Tree structural check.** For every `SEED.md` in the tree (excluding `.git/`), apply check 2 with two adjustments: the `# Purpose` H1's body (the lines between the H1 and the next heading) MUST contain exactly one non-blank line, and that line MUST wikilink to a sibling-or-ancestor `README#Purpose` — nothing else (no description, no metadata); sub-folder SEEDs MUST NOT contain `## Normative Language` (they inherit it from the root, per `^seed-grammar`). Expected: yes for all.
 
 A deterministic bash implementation of these three prompts lives at [`ref/verify.sh`](ref/verify.sh) — run it from the repo root for a CI-friendly exit-code answer. The natural-language prompts above are normative; `ref/verify.sh` is one reference implementation.
 
