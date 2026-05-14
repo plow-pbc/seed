@@ -92,7 +92,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 
 ### Tier ^obj-tier
 
-A property of any moment in an Action that requires user input. The tier names how much human judgment is needed to advance; it is orthogonal to trust ([[#^act-trust]]) — trust is about whether content can mutate state, tier is about whether the user must choose.
+A property of an Action's decision/advance points — including moments that need no prompt at all. The tier names how much human judgment is needed to advance; it is orthogonal to trust ([[#^act-trust]]) — trust is about whether content can mutate state, tier is about whether (and how) the user must choose.
 
 | Tier | When | User input shape |
 |---|---|---|
