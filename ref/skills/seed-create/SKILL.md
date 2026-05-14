@@ -18,7 +18,7 @@ Create one task per item (TaskCreate) and complete in order:
 1. Establish what capability the user wants to capture.
 2. Pick a name and target path.
 3. Reconnaissance sweep — read-only probes, batch-confirmed, sequentially executed.
-4. Tiered confirmation of derived facts.
+4. Confirm derived facts (auto-fill or ask).
 5. Open-ended interview for the things only the user knows.
 6. Present full draft of `SEED.md` + `README.md` for approval.
 7. On approval: `mkdir`, write files, `git init`, structural self-verify, initial commit.
@@ -45,28 +45,12 @@ Derive read-only probes from the capability name — cwd manifests, system info,
 
 On batch-approval, execute sequentially. If any probe isn't obviously read-only, split it out and confirm individually before running.
 
-## Step 3 — Tiered confirmation
+## Step 3 — Confirm derived facts
 
-For each fact derived from the probes, choose the right tier:
+For each fact:
 
-**Tier 1 (auto-fill, no question):** Derivable, single source of truth. Write into the draft and emit a one-line rolling diff:
-
-> Wrote `GPU: NVIDIA A100, ≥40GB VRAM` to `## Dependencies > hardware`. Override?
-
-**Tier 2 (closed confirm):** Detectable but with a real choice. Ask a closed multi-choice question with 2–4 options:
-
-> Found ollama v0.1.32 with llama3 + codellama loaded. Should the SEED require:
-> (a) both, pinned to current versions
-> (b) llama3 only
-> (c) any ollama model, no specific version
-
-**Tier 3 (open question):** Only the user knows. Ask in prose. Reserve for:
-
-- The Purpose paragraph for the README (intent, not state).
-- The natural name of objects/actions in the running system.
-- Sub-SEED decomposition decisions.
-- Which observable failures matter most for `## Verify`.
-- Feedback opt-in (`(default)` / `(none)` / absent).
+- **Auto-fill probe-derived facts** with a one-line rolling diff — e.g. `Wrote 'GPU: NVIDIA A100, ≥40GB VRAM' to ## Dependencies > hardware. Override?`
+- **Ask the user** only when the agent is choosing policy (which versions to pin, what counts as a `## Verify` success, sub-SEED decomposition, feedback opt-in) or lacks the information (the Purpose paragraph, natural names for objects/actions). Prefer closed multi-choice for binary-ish picks; prose for open intent — covered in depth in Step 5.
 
 ## Step 4 — Draft `SEED.md` + `README.md`
 
