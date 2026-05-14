@@ -25,6 +25,30 @@ if bash "$here/ref/verify.sh" "$tmp/bad" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Negative: a README without `## Purpose` must be rejected (verify.sh
+# check 1). /seed-create depends on this gate to catch a draft where
+# the README's marketing prose was renamed or stripped.
+mkdir "$tmp/bad-readme"
+awk '/^## Purpose$/{skip=1} /^##/ && !/^## Purpose$/{skip=0} !skip' "$here/README.md" \
+  >"$tmp/bad-readme/README.md"
+cp "$here/SEED.md" "$tmp/bad-readme/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-readme" >/dev/null 2>&1; then
+  echo "FAIL: README without ## Purpose accepted"
+  exit 1
+fi
+
+# Negative: a root SEED.md without `## Normative Language` must be
+# rejected (verify.sh check 2). /seed-create depends on this gate to
+# catch a draft that skipped the RFC 2119 declaration.
+mkdir "$tmp/bad-normative"
+cp "$here/README.md" "$tmp/bad-normative/README.md"
+awk '/^## Normative Language$/{skip=1} /^##/ && !/^## Normative Language$/{skip=0} !skip' \
+  "$here/SEED.md" >"$tmp/bad-normative/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-normative" >/dev/null 2>&1; then
+  echo "FAIL: root SEED.md without ## Normative Language accepted"
+  exit 1
+fi
+
 # Regression: SEED.md files inside paths containing spaces must survive
 # the find walk (verify.sh uses a NUL-delimited loop). The sub-SEED's
 # Purpose wikilink resolves to the parent's README (sibling-or-ancestor),
