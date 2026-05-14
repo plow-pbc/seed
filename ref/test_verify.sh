@@ -26,11 +26,14 @@ if bash "$here/ref/verify.sh" "$tmp/bad" >/dev/null 2>&1; then
 fi
 
 # Regression: SEED.md files inside paths containing spaces must survive
-# the find walk (verify.sh uses a NUL-delimited loop).
+# the find walk (verify.sh uses a NUL-delimited loop). The sub-SEED's
+# Purpose wikilink resolves to the parent's README (sibling-or-ancestor),
+# so adjust it from `[[README#Purpose]]` to `[[../README#Purpose]]`.
 mkdir -p "$tmp/has space/sub dir"
 cp "$here/README.md" "$tmp/has space/README.md"
 cp "$here/SEED.md" "$tmp/has space/SEED.md"
-cp "$here/SEED.md" "$tmp/has space/sub dir/SEED.md"
+sed 's|\[\[README#Purpose\]\]|[[../README#Purpose]]|' "$here/SEED.md" \
+  >"$tmp/has space/sub dir/SEED.md"
 bash "$here/ref/verify.sh" "$tmp/has space" >/dev/null \
   || { echo "FAIL: SEED.md in spaced subdir rejected (find walk split)"; exit 1; }
 
@@ -60,13 +63,31 @@ fi
 
 # Negative: a tree where the root SEED.md is valid but a nested
 # SEED.md is malformed must be rejected (verify walks the whole tree,
-# not just the root).
+# not just the root). The malformed sub-SEED has `## Verify` stripped
+# AND uses `[[../README#Purpose]]` so it fails on the H2-sequence
+# check, not the (intentionally separate) missing-README check below.
 mkdir -p "$tmp/bad-child/sub dir"
 cp "$here/README.md" "$tmp/bad-child/README.md"
 cp "$here/SEED.md" "$tmp/bad-child/SEED.md"
-awk '/^## Verify$/{exit} {print}' "$here/SEED.md" >"$tmp/bad-child/sub dir/SEED.md"
+sed 's|\[\[README#Purpose\]\]|[[../README#Purpose]]|' "$here/SEED.md" \
+  | awk '/^## Verify$/{exit} {print}' >"$tmp/bad-child/sub dir/SEED.md"
 if bash "$here/ref/verify.sh" "$tmp/bad-child" >/dev/null 2>&1; then
   echo "FAIL: tree with malformed sub-SEED accepted"
+  exit 1
+fi
+
+# Negative: a nested SEED.md whose Purpose wikilink resolves to a
+# nonexistent README must be rejected. The wikilink contract is
+# sibling-or-ancestor README#Purpose; a string-match-only check would
+# print "tree conforms" for an orphan SEED.md.
+mkdir -p "$tmp/missing-readme/orphan"
+cp "$here/README.md" "$tmp/missing-readme/README.md"
+cp "$here/SEED.md" "$tmp/missing-readme/SEED.md"
+# Sub-SEED's `[[README#Purpose]]` resolves to orphan/README.md, which
+# is deliberately not created.
+cp "$here/SEED.md" "$tmp/missing-readme/orphan/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/missing-readme" >/dev/null 2>&1; then
+  echo "FAIL: SEED.md pointing to nonexistent README accepted"
   exit 1
 fi
 

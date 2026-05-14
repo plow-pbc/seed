@@ -68,6 +68,15 @@ while IFS= read -r -d '' f; do
   # which the contract forbids.
   echo "$pb" | grep -qE '^(> *)?(See *)?\[\[[A-Za-z0-9_./-]*README#Purpose\]\]\.?$' \
     || { echo "FAIL Purpose body not the canonical README#Purpose wikilink form: $f"; fail=1; continue; }
+  # Resolve the wikilink to an actual README.md on disk and require it has
+  # the ## Purpose H2 — the wikilink target contract is "sibling-or-ancestor
+  # README#Purpose", not just a string match.
+  readme_rel=$(echo "$pb" | sed -nE 's|.*\[\[([A-Za-z0-9_./-]*)README#Purpose\]\].*|\1README.md|p')
+  readme_target=$(dirname "$f")/$readme_rel
+  test -f "$readme_target" \
+    || { echo "FAIL Purpose wikilink points to missing README: $f -> $readme_target"; fail=1; continue; }
+  h2s_of "$readme_target" | grep -qx '## Purpose' \
+    || { echo "FAIL referenced README has no ## Purpose H2: $f -> $readme_target"; fail=1; continue; }
   echo "$h2" | grep -E '^## (Dependencies|Objects|Actions|Verify)$' | diff - \
        <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
     || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }
