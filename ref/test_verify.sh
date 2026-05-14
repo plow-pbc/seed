@@ -36,6 +36,48 @@ expect_verify_reject() {
 bash "$here/ref/verify.sh" "$here" >/dev/null \
   || { echo "FAIL: conforming repo rejected via target-dir mode"; exit 1; }
 
+# Positive: a minimal root SEED with only the five required H2s
+# (Normative Language + Dependencies + Objects + Actions + Verify) and
+# no optional sections must be accepted. This is the shape /seed-create
+# is allowed to emit when the user opts out of ## Feedback / ## Open /
+# ## Non-Goals; without this fixture the suite never proves the
+# optional-section omission contract.
+mkdir "$tmp/minimal"
+cat >"$tmp/minimal/README.md" <<'MD'
+# Minimal
+
+## Purpose
+
+Minimal-shape fixture for /seed-create self-verify.
+MD
+cat >"$tmp/minimal/SEED.md" <<'MD'
+# Purpose
+
+> See [[README#Purpose]].
+
+## Normative Language
+
+Inherited from RFC 2119.
+
+## Dependencies
+
+(none)
+
+## Objects
+
+(none)
+
+## Actions
+
+(none)
+
+## Verify
+
+(none)
+MD
+bash "$here/ref/verify.sh" "$tmp/minimal" >/dev/null \
+  || { echo "FAIL: minimal-shape root SEED rejected"; exit 1; }
+
 # Negative: a copy of the repo's SEED.md with `## Verify` stripped
 # must be rejected.
 mkdir "$tmp/bad"
