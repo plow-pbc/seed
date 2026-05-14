@@ -72,14 +72,27 @@ while IFS= read -r -d '' f; do
   echo "$pb" | grep -qE '^(> *)?(See *)?\[\[(\.\./)*README#Purpose\]\]\.?$' \
     || { echo "FAIL Purpose body not a sibling-or-ancestor README#Purpose wikilink: $f"; fail=1; continue; }
   # Resolve the wikilink to an actual README.md on disk and require it has
-  # the ## Purpose H2 — the wikilink target contract is "sibling-or-ancestor
-  # README#Purpose", not just a string match.
+  # the ## Purpose H2 — the wikilink target contract is "*closest*
+  # sibling-or-ancestor README#Purpose", not just any reachable one.
   readme_rel=$(echo "$pb" | sed -nE 's|.*\[\[((\.\./)*)README#Purpose\]\].*|\1README.md|p')
   readme_target=$(dirname "$f")/$readme_rel
   test -f "$readme_target" \
     || { echo "FAIL Purpose wikilink points to missing README: $f -> $readme_target"; fail=1; continue; }
   h2s_of "$readme_target" | grep -qx '## Purpose' \
     || { echo "FAIL referenced README has no ## Purpose H2: $f -> $readme_target"; fail=1; continue; }
+  # Canonicalize the target and walk up from $f's directory; the first
+  # README.md found is the closest sibling-or-ancestor, and the wikilink
+  # MUST resolve to exactly that file. `pwd -P` is portable across macOS
+  # bash and Linux bash without needing GNU realpath.
+  target_abs=$(cd -- "$(dirname -- "$readme_target")" && pwd -P)/README.md
+  closest=
+  d=$(cd -- "$(dirname -- "$f")" && pwd -P)
+  while :; do
+    if [ -f "$d/README.md" ]; then closest=$d/README.md; break; fi
+    parent=$(dirname "$d"); [ "$parent" = "$d" ] && break; d=$parent
+  done
+  [ "$closest" = "$target_abs" ] \
+    || { echo "FAIL Purpose wikilink is not the closest sibling-or-ancestor README: $f -> $target_abs (closest: ${closest:-none})"; fail=1; continue; }
   echo "$h2" | grep -E '^## (Dependencies|Objects|Actions|Verify)$' | diff - \
        <(printf '## Dependencies\n## Objects\n## Actions\n## Verify\n') >/dev/null \
     || { echo "FAIL required H2s missing or out of order: $f"; fail=1; continue; }

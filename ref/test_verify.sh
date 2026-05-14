@@ -156,6 +156,20 @@ if bash "$here/ref/verify.sh" "$tmp/bad-cousin" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Negative: a wikilink to a more-distant ancestor README when a closer
+# one exists must be rejected. The contract says "*closest* sibling-or-
+# ancestor"; without this check, [[../../README#Purpose]] would pass
+# whenever ../../README.md exists, silently skipping ../README.md.
+mkdir -p "$tmp/bad-skip-readme/close/sub"
+cp "$here/README.md" "$tmp/bad-skip-readme/README.md"
+cp "$here/README.md" "$tmp/bad-skip-readme/close/README.md"
+cp "$here/SEED.md" "$tmp/bad-skip-readme/SEED.md"
+sub_seed_from_root '../../README#Purpose' >"$tmp/bad-skip-readme/close/sub/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-skip-readme" >/dev/null 2>&1; then
+  echo "FAIL: sub-SEED skipping closer README ($tmp/bad-skip-readme/close/README.md) accepted"
+  exit 1
+fi
+
 # Negative: a nested SEED.md MUST NOT re-declare ## Normative Language
 # (it inherits from the root per ^seed-grammar). Build a tree where the
 # sub-SEED is a literal copy of the root SEED.md (with just the wikilink
