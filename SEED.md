@@ -43,7 +43,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 - Within Dependencies, entries SHOULD be ordered: **hardware** first (GPU, RAM, disk), then **API** (keys, accounts, quotas), then **software** (OS, runtimes, packages). Sub-SEED wikilinks slot in by the category of what they install. ^obj-deps-order
 - Contains a mix of:
   - **Sub-SEED wikilinks** (`[[<child>/SEED#Purpose]]`) — for SEEDs in the same repo. Installed by walking the wikilink to the sub-folder. ^obj-deps-wikilink
-  - **External SEED URLs** (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — for SEEDs in separate repos. Installed by treating the URL as a fresh install target (clone, read its `SEED.md`, recurse). ^obj-deps-external
+  - **External SEED URLs** (any HTTPS `https://<host>/<org>/<repo>[.git]` or SSH `git@<host>:<org>/<repo>.git` git URL) — for SEEDs in separate repos. Installed by treating the URL as a fresh install target (clone, read its `SEED.md`, recurse). ^obj-deps-external
   - **External system requirements** — system packages, language runtimes, disk, sudo. Surfaced to the user; the SEED MAY provide install commands, but MUST NOT assume the agent can run them without confirmation.
   - **External non-SEED repo clones** — code from a different git URL that is NOT itself a SEED.
   - **Repo setup commands** — `uv sync`, `prepare.py`, build steps, etc.
@@ -142,7 +142,7 @@ A SEED authored this way is structurally indistinguishable from one written by h
 - An agent installs a SEED at `<target>` by: ^act-install
   1. Resolving `<target>` to a `$REPO_ROOT` on disk (see input modes below).
   2. Reading `<repo>/SEED.md`.
-  3. For each SEED dependency in `## Dependencies` — either a `[[<child>/SEED#Purpose]]` wikilink (sub-folder SEED in the same repo) or an external SEED URL (`https://github.com/<org>/<repo>` or `git@github.com:<org>/<repo>.git`) — recursively installing that SEED first by repeating this procedure against it.
+  3. For each SEED dependency in `## Dependencies` — either a `[[<child>/SEED#Purpose]]` wikilink (sub-folder SEED in the same repo) or an external SEED URL (any HTTPS or SSH git URL per [[#^obj-deps-external]]) — recursively installing that SEED first by repeating this procedure against it.
   4. Executing every shell block under `## Dependencies` (user-confirmed per block).
   5. Answering the `## Verify` prompts (user-confirmed for any shell each prompt asks the agent to run).
 - Order: leaves-first, root-last.
