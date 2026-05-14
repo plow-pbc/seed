@@ -22,6 +22,16 @@ sub_seed_from_root() {
   '
 }
 
+# Assert that ref/verify.sh rejects a malformed fixture. Used by every
+# negative test below.
+expect_verify_reject() {
+  local dir=$1 msg=$2
+  if bash "$here/ref/verify.sh" "$dir" >/dev/null 2>&1; then
+    echo "FAIL: $msg"
+    exit 1
+  fi
+}
+
 # Positive: target-dir mode accepts this convention repo.
 bash "$here/ref/verify.sh" "$here" >/dev/null \
   || { echo "FAIL: conforming repo rejected via target-dir mode"; exit 1; }
@@ -32,10 +42,7 @@ mkdir "$tmp/bad"
 cp "$here/README.md" "$tmp/bad/README.md"
 awk '/^## Verify$/{exit} {print}' "$here/SEED.md" >"$tmp/bad/SEED.md"
 
-if bash "$here/ref/verify.sh" "$tmp/bad" >/dev/null 2>&1; then
-  echo "FAIL: malformed fixture (missing ## Verify) accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad" "malformed fixture (missing ## Verify) accepted"
 
 # Negative: a README without `## Purpose` must be rejected (verify.sh
 # check 1). /seed-create depends on this gate to catch a draft where
@@ -44,10 +51,7 @@ mkdir "$tmp/bad-readme"
 awk '/^## Purpose$/{skip=1} /^##/ && !/^## Purpose$/{skip=0} !skip' "$here/README.md" \
   >"$tmp/bad-readme/README.md"
 cp "$here/SEED.md" "$tmp/bad-readme/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-readme" >/dev/null 2>&1; then
-  echo "FAIL: README without ## Purpose accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-readme" "README without ## Purpose accepted"
 
 # Negative: a root SEED.md without `## Normative Language` must be
 # rejected (verify.sh check 2). /seed-create depends on this gate to
@@ -56,10 +60,7 @@ mkdir "$tmp/bad-normative"
 cp "$here/README.md" "$tmp/bad-normative/README.md"
 awk '/^## Normative Language$/{skip=1} /^##/ && !/^## Normative Language$/{skip=0} !skip' \
   "$here/SEED.md" >"$tmp/bad-normative/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-normative" >/dev/null 2>&1; then
-  echo "FAIL: root SEED.md without ## Normative Language accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-normative" "root SEED.md without ## Normative Language accepted"
 
 # Regression: SEED.md files inside paths containing spaces must survive
 # the find walk (verify.sh uses a NUL-delimited loop). The sub-SEED's
@@ -92,10 +93,7 @@ awk '
   }
   { print }
 ' "$here/SEED.md" >"$tmp/bad-purpose/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-purpose" >/dev/null 2>&1; then
-  echo "FAIL: SEED.md with extra prose in # Purpose body accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-purpose" "SEED.md with extra prose in # Purpose body accepted"
 
 # Negative: a tree where the root SEED.md is valid but a nested
 # SEED.md is malformed must be rejected (verify walks the whole tree,
@@ -107,10 +105,7 @@ cp "$here/README.md" "$tmp/bad-child/README.md"
 cp "$here/SEED.md" "$tmp/bad-child/SEED.md"
 sub_seed_from_root '../README#Purpose' \
   | awk '/^## Verify$/{exit} {print}' >"$tmp/bad-child/sub dir/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-child" >/dev/null 2>&1; then
-  echo "FAIL: tree with malformed sub-SEED accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-child" "tree with malformed sub-SEED accepted"
 
 # Negative: a nested SEED.md whose Purpose wikilink resolves to a
 # nonexistent README must be rejected. The wikilink contract is
@@ -123,10 +118,7 @@ cp "$here/SEED.md" "$tmp/missing-readme/SEED.md"
 # is deliberately not created. Strip Normative Language so the failure
 # is on the missing-README contract, not the root-only-Normative gate.
 sub_seed_from_root 'README#Purpose' >"$tmp/missing-readme/orphan/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/missing-readme" >/dev/null 2>&1; then
-  echo "FAIL: SEED.md pointing to nonexistent README accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/missing-readme" "SEED.md pointing to nonexistent README accepted"
 
 # Negative: descendant prefix ([[child/README#Purpose]]) violates
 # sibling-or-ancestor even if the referenced file exists on disk.
@@ -137,10 +129,7 @@ cp "$here/README.md" "$tmp/bad-descendant/child/README.md"
 # behavior, so the file must stay a valid root (keep Normative Language).
 sed 's|\[\[README#Purpose\]\]|[[child/README#Purpose]]|' "$here/SEED.md" \
   >"$tmp/bad-descendant/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-descendant" >/dev/null 2>&1; then
-  echo "FAIL: descendant-prefix wikilink ([[child/README#Purpose]]) accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-descendant" "descendant-prefix wikilink ([[child/README#Purpose]]) accepted"
 
 # Negative: cousin prefix ([[../sibling/README#Purpose]]) violates
 # sibling-or-ancestor — "sibling of an ancestor" is neither. Build a
@@ -151,10 +140,7 @@ cp "$here/README.md" "$tmp/bad-cousin/README.md"
 cp "$here/README.md" "$tmp/bad-cousin/sibling/README.md"
 cp "$here/SEED.md" "$tmp/bad-cousin/SEED.md"
 sub_seed_from_root '../sibling/README#Purpose' >"$tmp/bad-cousin/branch/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-cousin" >/dev/null 2>&1; then
-  echo "FAIL: cousin-prefix wikilink ([[../sibling/README#Purpose]]) accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-cousin" "cousin-prefix wikilink ([[../sibling/README#Purpose]]) accepted"
 
 # Negative: a wikilink to a more-distant ancestor README when a closer
 # one exists must be rejected. The contract says "*closest* sibling-or-
@@ -165,10 +151,7 @@ cp "$here/README.md" "$tmp/bad-skip-readme/README.md"
 cp "$here/README.md" "$tmp/bad-skip-readme/close/README.md"
 cp "$here/SEED.md" "$tmp/bad-skip-readme/SEED.md"
 sub_seed_from_root '../../README#Purpose' >"$tmp/bad-skip-readme/close/sub/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-skip-readme" >/dev/null 2>&1; then
-  echo "FAIL: sub-SEED skipping closer README ($tmp/bad-skip-readme/close/README.md) accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-skip-readme" "sub-SEED skipping closer README ($tmp/bad-skip-readme/close/README.md) accepted"
 
 # Negative: a nested SEED.md MUST NOT re-declare ## Normative Language
 # (it inherits from the root per ^seed-grammar). Build a tree where the
@@ -179,9 +162,6 @@ cp "$here/README.md" "$tmp/bad-nested-normative/README.md"
 cp "$here/SEED.md" "$tmp/bad-nested-normative/SEED.md"
 sed 's|\[\[README#Purpose\]\]|[[../README#Purpose]]|' "$here/SEED.md" \
   >"$tmp/bad-nested-normative/sub/SEED.md"
-if bash "$here/ref/verify.sh" "$tmp/bad-nested-normative" >/dev/null 2>&1; then
-  echo "FAIL: nested SEED.md re-declaring ## Normative Language accepted"
-  exit 1
-fi
+expect_verify_reject "$tmp/bad-nested-normative" "nested SEED.md re-declaring ## Normative Language accepted"
 
 echo "ok"
