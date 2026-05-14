@@ -84,18 +84,12 @@ If the user names sub-capabilities that warrant their own SEED, add one TODO bul
 
 ## Step 6 — Secrets discipline
 
-Two rules, both load-bearing:
+The two-boundary contract — probe transcript discipline and drafted-file discipline — lives in the parent SEED:
 
-**1. Probes (Step 2) MUST NOT dump raw secret values into the transcript.** Once a secret value enters the agent's tool output, no later redaction step can recall it — it's already in the conversation context. Forbidden probes: `env` / `printenv` without a specific var name, `cat ~/.ssh/*`, `cat ~/.aws/credentials`, `cat ~/.netrc`, `docker compose config` (resolves env values inline), `gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`, `git remote -v`, `git config --get remote.*.url` (an HTTPS remote like `https://user:token@host/...` is a credential the user almost never intended to share with the transcript). Use presence/name-only probes instead: `printenv DATABASE_URL >/dev/null && echo 'set'`, `test -f ~/.aws/credentials && echo 'present'`, `env | awk -F= '{print $1}'` (names only), `git remote` (names only — no URLs).
+- Probe transcript: see [[../../../SEED#^act-author-probes]] for the forbidden-probe list and the presence/name-only alternatives.
+- Drafted-file content: see [[../../../SEED#^act-author-secrets]] for the env-var / URI userinfo / credential-path / token-pattern bans.
 
-**2. The drafted `SEED.md` / `README.md` MUST NOT include literal secret values.** Specifically:
-
-- Env vars matching `*_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD`, `*_URL`, `*_URI`, `*_CONNECTION_STRING`, `*_DSN` (connection-string env vars often embed credentials in userinfo).
-- URI userinfo — any URL value of the form `scheme://user:password@host/...`. Strip the `user:password@` segment before showing or storing.
-- Paths under `~/.ssh/`, `~/.aws/credentials`, `~/.config/gh/hosts.yml`, `~/.netrc`.
-- Anything matching `sk-...`, `ghp_...`, `xox[abp]-...`, AWS `AKIA.../ASIA...`, JWTs.
-
-If the capability requires a secret, the SEED MAY describe the requirement ("requires `OPENAI_API_KEY` in env", "requires `DATABASE_URL` in env") but MUST NOT show the value. If a probe result contains a secret despite rule 1, redact it (show only the last 3 chars: `sk-...xY7`) before presenting to the user. For env vars whose names alone could leak structure (e.g. internal hostnames), summarize as a count and category rather than verbatim.
+Operationally, when an inspection probe surfaces a secret despite the parent rule (the user pasted output from somewhere else, a permitted probe returned more than expected, etc.), redact at the boundary before presenting to the user — show only the last 3 chars of the value (`sk-...xY7`). For env vars whose names alone could leak structure (e.g. internal hostnames), summarize as a count and category rather than verbatim.
 
 ## Step 7 — Write, verify, commit
 
