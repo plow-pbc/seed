@@ -65,13 +65,15 @@ while IFS= read -r -d '' f; do
   # Body must be ONLY a sibling-or-ancestor README#Purpose wikilink, per
   # SEED.md ## Verify check 3. The recommended `> See [[...]].` blockquote
   # form is the only allowed prose decoration; anything else is "description"
-  # which the contract forbids.
-  echo "$pb" | grep -qE '^(> *)?(See *)?\[\[[A-Za-z0-9_./-]*README#Purpose\]\]\.?$' \
-    || { echo "FAIL Purpose body not the canonical README#Purpose wikilink form: $f"; fail=1; continue; }
+  # which the contract forbids. The path prefix may only be empty (sibling)
+  # or repeated `../` (strict ancestor) — child / cousin / sibling-of-ancestor
+  # prefixes like `child/`, `../sibling/` are rejected.
+  echo "$pb" | grep -qE '^(> *)?(See *)?\[\[(\.\./)*README#Purpose\]\]\.?$' \
+    || { echo "FAIL Purpose body not a sibling-or-ancestor README#Purpose wikilink: $f"; fail=1; continue; }
   # Resolve the wikilink to an actual README.md on disk and require it has
   # the ## Purpose H2 — the wikilink target contract is "sibling-or-ancestor
   # README#Purpose", not just a string match.
-  readme_rel=$(echo "$pb" | sed -nE 's|.*\[\[([A-Za-z0-9_./-]*)README#Purpose\]\].*|\1README.md|p')
+  readme_rel=$(echo "$pb" | sed -nE 's|.*\[\[((\.\./)*)README#Purpose\]\].*|\1README.md|p')
   readme_target=$(dirname "$f")/$readme_rel
   test -f "$readme_target" \
     || { echo "FAIL Purpose wikilink points to missing README: $f -> $readme_target"; fail=1; continue; }

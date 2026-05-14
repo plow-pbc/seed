@@ -91,4 +91,17 @@ if bash "$here/ref/verify.sh" "$tmp/missing-readme" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Negative: descendant ([[child/README#Purpose]]) and cousin
+# ([[../sibling/README#Purpose]]) prefixes violate sibling-or-ancestor
+# even if the referenced file exists on disk.
+mkdir -p "$tmp/bad-descendant/child"
+cp "$here/README.md" "$tmp/bad-descendant/README.md"
+cp "$here/README.md" "$tmp/bad-descendant/child/README.md"
+sed 's|\[\[README#Purpose\]\]|[[child/README#Purpose]]|' "$here/SEED.md" \
+  >"$tmp/bad-descendant/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-descendant" >/dev/null 2>&1; then
+  echo "FAIL: descendant-prefix wikilink ([[child/README#Purpose]]) accepted"
+  exit 1
+fi
+
 echo "ok"
