@@ -10,6 +10,18 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
+# Build a conforming sub-SEED from the repo's root SEED.md: swap the
+# Purpose wikilink target to point at the ancestor README, and strip
+# ## Normative Language (sub-SEEDs inherit RFC 2119 per ^seed-grammar).
+sub_seed_from_root() {
+  local wikilink=$1
+  sed "s|\\[\\[README#Purpose\\]\\]|[[$wikilink]]|" "$here/SEED.md" | awk '
+    /^## Normative Language$/ { skip=1; next }
+    /^## / && skip { skip=0 }
+    !skip
+  '
+}
+
 # Positive: target-dir mode accepts this convention repo.
 bash "$here/ref/verify.sh" "$here" >/dev/null \
   || { echo "FAIL: conforming repo rejected via target-dir mode"; exit 1; }
@@ -52,12 +64,12 @@ fi
 # Regression: SEED.md files inside paths containing spaces must survive
 # the find walk (verify.sh uses a NUL-delimited loop). The sub-SEED's
 # Purpose wikilink resolves to the parent's README (sibling-or-ancestor),
-# so adjust it from `[[README#Purpose]]` to `[[../README#Purpose]]`.
+# and the sub-SEED must inherit ## Normative Language (omit, don't
+# re-declare).
 mkdir -p "$tmp/has space/sub dir"
 cp "$here/README.md" "$tmp/has space/README.md"
 cp "$here/SEED.md" "$tmp/has space/SEED.md"
-sed 's|\[\[README#Purpose\]\]|[[../README#Purpose]]|' "$here/SEED.md" \
-  >"$tmp/has space/sub dir/SEED.md"
+sub_seed_from_root '../README#Purpose' >"$tmp/has space/sub dir/SEED.md"
 bash "$here/ref/verify.sh" "$tmp/has space" >/dev/null \
   || { echo "FAIL: SEED.md in spaced subdir rejected (find walk split)"; exit 1; }
 
@@ -93,7 +105,7 @@ fi
 mkdir -p "$tmp/bad-child/sub dir"
 cp "$here/README.md" "$tmp/bad-child/README.md"
 cp "$here/SEED.md" "$tmp/bad-child/SEED.md"
-sed 's|\[\[README#Purpose\]\]|[[../README#Purpose]]|' "$here/SEED.md" \
+sub_seed_from_root '../README#Purpose' \
   | awk '/^## Verify$/{exit} {print}' >"$tmp/bad-child/sub dir/SEED.md"
 if bash "$here/ref/verify.sh" "$tmp/bad-child" >/dev/null 2>&1; then
   echo "FAIL: tree with malformed sub-SEED accepted"
@@ -108,8 +120,9 @@ mkdir -p "$tmp/missing-readme/orphan"
 cp "$here/README.md" "$tmp/missing-readme/README.md"
 cp "$here/SEED.md" "$tmp/missing-readme/SEED.md"
 # Sub-SEED's `[[README#Purpose]]` resolves to orphan/README.md, which
-# is deliberately not created.
-cp "$here/SEED.md" "$tmp/missing-readme/orphan/SEED.md"
+# is deliberately not created. Strip Normative Language so the failure
+# is on the missing-README contract, not the root-only-Normative gate.
+sub_seed_from_root 'README#Purpose' >"$tmp/missing-readme/orphan/SEED.md"
 if bash "$here/ref/verify.sh" "$tmp/missing-readme" >/dev/null 2>&1; then
   echo "FAIL: SEED.md pointing to nonexistent README accepted"
   exit 1
@@ -120,6 +133,8 @@ fi
 mkdir -p "$tmp/bad-descendant/child"
 cp "$here/README.md" "$tmp/bad-descendant/README.md"
 cp "$here/README.md" "$tmp/bad-descendant/child/README.md"
+# Root SEED.md with a descendant-prefix wikilink: tests root-level
+# behavior, so the file must stay a valid root (keep Normative Language).
 sed 's|\[\[README#Purpose\]\]|[[child/README#Purpose]]|' "$here/SEED.md" \
   >"$tmp/bad-descendant/SEED.md"
 if bash "$here/ref/verify.sh" "$tmp/bad-descendant" >/dev/null 2>&1; then
@@ -135,10 +150,23 @@ mkdir -p "$tmp/bad-cousin/sibling" "$tmp/bad-cousin/branch"
 cp "$here/README.md" "$tmp/bad-cousin/README.md"
 cp "$here/README.md" "$tmp/bad-cousin/sibling/README.md"
 cp "$here/SEED.md" "$tmp/bad-cousin/SEED.md"
-sed 's|\[\[README#Purpose\]\]|[[../sibling/README#Purpose]]|' "$here/SEED.md" \
-  >"$tmp/bad-cousin/branch/SEED.md"
+sub_seed_from_root '../sibling/README#Purpose' >"$tmp/bad-cousin/branch/SEED.md"
 if bash "$here/ref/verify.sh" "$tmp/bad-cousin" >/dev/null 2>&1; then
   echo "FAIL: cousin-prefix wikilink ([[../sibling/README#Purpose]]) accepted"
+  exit 1
+fi
+
+# Negative: a nested SEED.md MUST NOT re-declare ## Normative Language
+# (it inherits from the root per ^seed-grammar). Build a tree where the
+# sub-SEED is a literal copy of the root SEED.md (with just the wikilink
+# adjusted) — keeping Normative Language — and assert verify rejects it.
+mkdir -p "$tmp/bad-nested-normative/sub"
+cp "$here/README.md" "$tmp/bad-nested-normative/README.md"
+cp "$here/SEED.md" "$tmp/bad-nested-normative/SEED.md"
+sed 's|\[\[README#Purpose\]\]|[[../README#Purpose]]|' "$here/SEED.md" \
+  >"$tmp/bad-nested-normative/sub/SEED.md"
+if bash "$here/ref/verify.sh" "$tmp/bad-nested-normative" >/dev/null 2>&1; then
+  echo "FAIL: nested SEED.md re-declaring ## Normative Language accepted"
   exit 1
 fi
 

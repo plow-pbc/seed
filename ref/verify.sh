@@ -87,6 +87,15 @@ while IFS= read -r -d '' f; do
     BEGIN { n = split(canon, c, "|"); i = 1 }
     { while (i <= n && c[i] != $0) i++; if (i > n) exit 1; i++ }
   ' || { echo "FAIL H2 sequence not a subsequence of canonical (or has duplicates): $f"; fail=1; continue; }
+  # Root-vs-child gate: ## Normative Language is required only on the
+  # root SEED.md (checked at line 44 against cwd-relative ./SEED.md)
+  # and forbidden on every nested SEED.md — sub-SEEDs inherit RFC 2119
+  # from the root per ^seed-grammar in SEED.md.
+  if [ "$f" != "./SEED.md" ] && echo "$h2" | grep -qx '## Normative Language'; then
+    echo "FAIL nested SEED.md must not re-declare ## Normative Language: $f"
+    fail=1
+    continue
+  fi
 done < <(find . -path './.git' -prune -o -name 'SEED.md' -print0)
 
 test "$fail" = "0" && echo "tree conforms"
