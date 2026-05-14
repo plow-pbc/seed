@@ -13,18 +13,14 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 fail=0
 
 # Files with wikilinks worth checking: root convention + every sub-SEED
-# markdown file. Glob expansion of an empty match is dropped by nullglob,
-# so the list is exactly what's on disk.
+# markdown file. The list always starts with the literal root SEED.md, so
+# nullglob can drop the skill globs without ever yielding an empty list.
 files=(
   "$here/SEED.md"
   "$here"/ref/skills/*/README.md
   "$here"/ref/skills/*/SEED.md
   "$here"/ref/skills/*/SKILL.md
 )
-if [ ${#files[@]} -eq 0 ]; then
-  echo "FAIL: no markdown files matched — refusing to print ok"
-  exit 1
-fi
 
 for file in "${files[@]}"; do
   file_dir=$(dirname "$file")
@@ -51,9 +47,16 @@ for file in "${files[@]}"; do
         continue
       fi
     fi
-    if [[ "$anchor" == ^* ]] && ! grep -qF "$anchor" "$target"; then
-      echo "FAIL: $file → $raw references missing block-id $anchor in $target"
-      fail=1
+    if [[ "$anchor" == ^* ]]; then
+      # Block IDs live at end-of-line. Match the anchor as a complete
+      # token (preceded by SOL or whitespace, followed by trailing
+      # whitespace or EOL) — not as a substring — so `^act-install`
+      # does NOT satisfy a reference to `^act-install-modes`.
+      escaped="${anchor//\^/\\^}"
+      if ! grep -qE "(^|[[:space:]])${escaped}[[:space:]]*\$" "$target"; then
+        echo "FAIL: $file → $raw references missing block-id $anchor in $target"
+        fail=1
+      fi
     fi
     # Strip single-backtick code spans before grepping for [[...]] — wikilink
     # forms quoted as examples (e.g. `[[<child>/SEED#Purpose]]` in the spec)
