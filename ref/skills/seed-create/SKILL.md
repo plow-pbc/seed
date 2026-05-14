@@ -135,8 +135,8 @@ If the capability requires a secret, the SEED MAY describe the requirement ("req
 After draft approval, run each block with user confirmation. Writes are NOT batched the way read-only probes were — each shell block displays and confirms individually. The target path MUST NOT already exist; `mkdir` (without `-p`) is intentional so an existing directory fails the run loudly rather than silently committing unrelated contents on top:
 
 ```bash
-mkdir <target-path>
-cd <target-path>
+mkdir -- "<target-path>"
+cd -- "<target-path>"
 git init
 # Write SEED.md, README.md, and (only if the user requested it) ref/verify.sh
 git add .
@@ -148,7 +148,7 @@ git commit -m "feat: bootstrap SEED for <capability>"
 Apply the three structural Verify prompts from [[../../../SEED#^obj-verify]] (the parent convention's `## Verify` section) to the new tree. The skill MAY shell out to this repo's `ref/verify.sh`, passing the new SEED's directory as an explicit target arg:
 
 ```bash
-bash <path-to-this-repo>/ref/verify.sh <target-path>
+bash "<path-to-this-repo>/ref/verify.sh" "<target-path>"
 ```
 
 Without the arg, `ref/verify.sh` verifies the convention repo itself, not the new SEED. Report pass/fail. On fail, the most likely cause is structural drift in the draft — surface the specific failure and offer to amend (which loops back to Step 4's draft-approval gate).

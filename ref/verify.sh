@@ -52,7 +52,9 @@ h2s_of SEED.md | grep -qx '## Normative Language'
 canonical='## Normative Language|## Dependencies|## Objects|## Actions|## Verify|## Feedback|## Open|## Non-Goals'
 
 fail=0
-for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
+# NUL-delimited find loop so SEED.md paths containing spaces or newlines
+# survive (a target dir like '/tmp/my seed' would split under for-in $(find)).
+while IFS= read -r -d '' f; do
   h1=$(h1s_of "$f")
   h2=$(h2s_of "$f")
   pb=$(purpose_body_of "$f")
@@ -69,6 +71,6 @@ for f in $(find . -path './.git' -prune -o -name 'SEED.md' -print); do
     BEGIN { n = split(canon, c, "|"); i = 1 }
     { while (i <= n && c[i] != $0) i++; if (i > n) exit 1; i++ }
   ' || { echo "FAIL H2 sequence not a subsequence of canonical (or has duplicates): $f"; fail=1; continue; }
-done
+done < <(find . -path './.git' -prune -o -name 'SEED.md' -print0)
 
 test "$fail" = "0" && echo "tree conforms"
