@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Acceptance test for ref/verify.sh's target-dir mode (the self-verify
-# gate used by /seed-create). Builds a minimal conforming SEED, then a
-# malformed copy with `## Verify` stripped; asserts accept/reject.
+# gate used by /seed-create). Uses the convention repo itself as the
+# canonical conforming fixture; builds only the malformed and
+# spaced-path siblings ad-hoc from the repo's own files.
 
 set -eu
 
@@ -9,49 +10,28 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-mkdir "$tmp/ok" "$tmp/bad"
-cat >"$tmp/ok/README.md" <<'MD'
-# Fixture
+# Positive: target-dir mode accepts this convention repo.
+bash "$here/ref/verify.sh" "$here" >/dev/null \
+  || { echo "FAIL: conforming repo rejected via target-dir mode"; exit 1; }
 
-## Purpose
-
-Minimal conforming SEED tree.
-MD
-cat >"$tmp/ok/SEED.md" <<'MD'
-# Purpose
-
-> See [[README#Purpose]].
-
-## Normative Language
-
-Inherited from RFC 2119.
-
-## Dependencies
-
-(none)
-
-## Objects
-
-(none)
-
-## Actions
-
-(none)
-
-## Verify
-
-(none)
-MD
-
-cp "$tmp/ok/README.md" "$tmp/bad/README.md"
-awk '/^## Verify$/{exit} {print}' "$tmp/ok/SEED.md" >"$tmp/bad/SEED.md"
-
-bash "$here/ref/verify.sh" "$tmp/ok" >/dev/null \
-  || { echo "FAIL: conforming fixture rejected"; exit 1; }
+# Negative: a copy of the repo's SEED.md with `## Verify` stripped
+# must be rejected.
+mkdir "$tmp/bad"
+cp "$here/README.md" "$tmp/bad/README.md"
+awk '/^## Verify$/{exit} {print}' "$here/SEED.md" >"$tmp/bad/SEED.md"
 
 if bash "$here/ref/verify.sh" "$tmp/bad" >/dev/null 2>&1; then
   echo "FAIL: malformed fixture (missing ## Verify) accepted"
   exit 1
 fi
+
+# Regression: SEED.md files inside paths containing spaces must survive
+# the find walk (verify.sh uses a NUL-delimited loop).
+mkdir -p "$tmp/has space/sub dir"
+cp "$here/README.md" "$tmp/has space/README.md"
+cp "$here/SEED.md" "$tmp/has space/SEED.md"
+cp "$here/SEED.md" "$tmp/has space/sub dir/SEED.md"
+bash "$here/ref/verify.sh" "$tmp/has space" >/dev/null \
+  || { echo "FAIL: SEED.md in spaced subdir rejected (find walk split)"; exit 1; }
 
 echo "ok"
