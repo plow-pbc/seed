@@ -19,7 +19,7 @@
 
 ### Input modes ^obj-modes-install
 
-- `Clone mode` (git URL → clone → `cd`), `Local mode` (existing path with `SEED.md`), `CWD mode` (`.` or empty arg). Clone mode rejects URLs with userinfo, query, or fragment before display or execution (per [[../../../SEED#^act-install-clone-url]]); all three pass user input as `argv`, never interpolated.
+- See [[../../../SEED#^act-install-modes]] for the three modes and [[../../../SEED#^act-install-clone-url]] for the clone URL hygiene rule.
 
 ## Actions
 
