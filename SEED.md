@@ -146,14 +146,14 @@ stateDiagram-v2
     received --> terminal: aborted
     cloning --> walking_deps: clone OK
     cloning --> terminal: failure
-    walking_deps --> running_block: shell block
-    walking_deps --> walking_deps: sub-SEED / external URL (recurse)
+    walking_deps --> running_command: confirmed command
+    walking_deps --> walking_deps: sub-SEED / external SEED URL (recurse)
     walking_deps --> verifying: deps done
     walking_deps --> terminal: failure
     walking_deps --> terminal: aborted
-    running_block --> walking_deps: block OK
-    running_block --> terminal: failure
-    running_block --> terminal: aborted
+    running_command --> walking_deps: command OK
+    running_command --> terminal: failure
+    running_command --> terminal: aborted
     verifying --> verifying: next prompt
     verifying --> terminal: failure
     verifying --> terminal: aborted
@@ -166,7 +166,7 @@ stateDiagram-v2
 | `received` | Target parsed; input mode determined (`clone` / `local` / `cwd`) per [[#^act-install-modes]]. |
 | `cloning` | Clone-mode only: `git clone` in progress. Skipped in local / cwd modes. |
 | `walking_deps` | Iterating `## Dependencies` entries; may recurse into sub-SEEDs and external SEED URLs. |
-| `running_block` | Displaying a `## Dependencies` shell block or external non-SEED clone command for user confirmation; executing on approval. Returns to `walking_deps` on success. |
+| `running_command` | Displaying a confirmed command from `## Dependencies` (shell block or external non-SEED clone) for user approval; executing on approval. Returns to `walking_deps` on success. |
 | `verifying` | Running through `## Verify` prompts top-down. |
 | `terminal` | Install attempt complete. The terminal reason is defined in [[#^obj-terminal-reasons]]. Feedback dispatch (per [[#^act-feedback]]) is a post-terminal side effect — it observes the terminal reason but does not extend the state machine. |
 
@@ -221,7 +221,7 @@ Order: leaves-first, root-last (Phase 1 fully completes before Phase 2 starts).
 
 The agent accepts `<target>` in one of three input modes: ^act-install-modes
 
-- **Clone mode** — a git URL (`https://...` or `git@host:...`). The agent clones to `$REPO_ROOT` (its choice of location). The clone URL MUST NOT contain userinfo (`user:token@host/...`), query (`?...`), or fragment (`#...`) components — `git clone <url>` puts the whole URL into process argv (visible via `/proc/<pid>/cmdline` and shell history), and those three URL parts are the canonical carriers of credentials and session-scoped identifiers. The agent MUST reject any such URL and ask for a plain `https://host/org/repo[.git]` or SSH (`git@host:org/repo.git`) form, relying on the user's git credential helper for auth. ^act-install-clone-url
+- **Clone mode** — a git URL (`https://...` or `git@host:...`). The agent clones to `$REPO_ROOT` (its choice of location). The clone URL MUST NOT contain userinfo (`user:token@host/...`), query (`?...`), or fragment (`#...`) components — `git clone <url>` puts the whole URL into process argv (visible via `/proc/<pid>/cmdline` and shell history), and those three URL parts are the canonical carriers of credentials and session-scoped identifiers. The agent MUST reject any such URL and ask for a plain `https://host/org/repo[.git]` or SSH (`git@host:org/repo.git`) form, relying on the user's git credential helper for auth. The same hygiene rule applies to external non-SEED clone commands under `## Dependencies` (Phase 2): `argv` exposure is identical, so the agent MUST reject any such command whose URL carries userinfo, query, or fragment. ^act-install-clone-url
 - **Local mode** — an existing path containing a `SEED.md`. No clone; the agent `cd`s into the path and treats it as `$REPO_ROOT`.
 - **CWD mode** — empty target or `.`. The agent treats the current working directory as `$REPO_ROOT`.
 
