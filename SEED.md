@@ -156,6 +156,7 @@ stateDiagram-v2
     running_block --> terminal: aborted
     verifying --> verifying: next prompt
     verifying --> terminal: failure
+    verifying --> terminal: aborted
     verifying --> terminal: success
     terminal --> [*]
 ```
@@ -167,7 +168,7 @@ stateDiagram-v2
 | `walking_deps` | Iterating `## Dependencies` entries; may recurse into sub-SEEDs and external SEED URLs. |
 | `running_block` | Displaying a shell block from `## Dependencies` for user confirmation; executing on approval. Returns to `walking_deps` on success. |
 | `verifying` | Running through `## Verify` prompts top-down. |
-| `terminal` | Install attempt complete. The terminal reason is one of `success`, `failure`, or `aborted` (see [[#^obj-terminal-reasons]]). Feedback dispatch (per [[#^act-feedback]]) is a post-terminal side effect — it observes the terminal reason but does not extend the state machine. |
+| `terminal` | Install attempt complete. The terminal reason is defined in [[#^obj-terminal-reasons]]. Feedback dispatch (per [[#^act-feedback]]) is a post-terminal side effect — it observes the terminal reason but does not extend the state machine. |
 
 ### Terminal reasons ^obj-terminal-reasons
 
@@ -176,8 +177,8 @@ The three legal terminal reasons for an install attempt. Used both by [[#^act-in
 | Reason | When |
 |---|---|
 | `success` | All `## Dependencies` confirmed and executed without error; all `## Verify` prompts returned the expected answer. |
-| `failure` | A shell block exited non-zero, a `## Verify` prompt returned an unexpected answer, `git clone` failed, or a recursively-installed sub-SEED failed. |
-| `aborted` | The user denied confirmation on a shell block, the agent could not satisfy a dependency (network, missing tool, etc.), the target was invalid or `SEED.md` was unreadable, or a recursively-installed sub-SEED was aborted. |
+| `failure` | An invoked command exited non-zero: a shell block under `## Dependencies`, `git clone` in clone mode, a `## Verify` prompt that returned an unexpected answer, or a recursively-installed sub-SEED that terminated with `failure`. |
+| `aborted` | The install stopped before or during user gating, not from a command's exit code: the user denied confirmation on a `## Dependencies` shell block or a `## Verify` shell prompt, the target was invalid or `SEED.md` was unreadable, a required tool was missing so the agent could not attempt the step, or a recursively-installed sub-SEED terminated with `aborted`. |
 
 ## Actions
 
@@ -207,7 +208,7 @@ A SEED authored this way is structurally indistinguishable from one written by h
 
 ### SEED is installed
 
-An agent installs a SEED at `<target>` by traversing the install state machine ([[#^obj-install-states]]) — resolving the target to `$REPO_ROOT`, walking `## Dependencies` recursively leaves-first with per-block user confirmation, then answering `## Verify`. On exit, the agent MUST emit exactly one terminal reason from [[#^obj-terminal-reasons]]; the same enum is the `outcome` field on the feedback payload, so install termination and feedback dispatch share one vocabulary. ^act-install
+An agent installs a SEED at `<target>` by traversing the install state machine ([[#^obj-install-states]]) — resolving the target to `$REPO_ROOT`, walking `## Dependencies` recursively leaves-first with per-block user confirmation, then answering `## Verify`. On exit, the agent MUST emit exactly one terminal reason from [[#^obj-terminal-reasons]]. ^act-install
 
 1. Resolve `<target>` to a `$REPO_ROOT` on disk (see input modes below).
 2. Read `<repo>/SEED.md`.
