@@ -15,7 +15,7 @@
 
 ### Trust gate ^obj-trustgate-install
 
-- The non-negotiable per-block confirmation declared at the top of SKILL.md. Every shell block under `## Dependencies` and every shell prompted by `## Verify` MUST be displayed in full and confirmed before execution.
+- The non-negotiable per-block confirmation gate declared at the top of SKILL.md (per [[../../../SEED#^act-trust]]).
 
 ### Input modes ^obj-modes-install
 

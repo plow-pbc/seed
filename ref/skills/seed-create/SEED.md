@@ -14,11 +14,11 @@
 
 ### Hard gate ^obj-hardgate-create
 
-- The pre-disk-write approval declared at the top of SKILL.md. NO file write, NO `mkdir`, NO `git init` until the user has approved the drafted `SEED.md` + `README.md`.
+- The pre-disk-write approval gate declared at the top of SKILL.md (per [[../../../SEED#^act-author]]).
 
 ### Three-tier confirmation ^obj-tiers-create
 
-- Tier 1 (auto-fill, no question), Tier 2 (closed-choice confirm), Tier 3 (open question). The skill's interview pattern for resolving derived facts versus user-only knowledge.
+- The tier model SKILL.md uses to advance through the interview (per [[../../../SEED#^obj-tier]]).
 
 ## Actions
 
