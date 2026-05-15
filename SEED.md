@@ -166,7 +166,7 @@ stateDiagram-v2
 | `received` | Target parsed; input mode determined (`clone` / `local` / `cwd`) per [[#^act-install-modes]]. |
 | `cloning` | Clone-mode only: `git clone` in progress. Skipped in local / cwd modes. |
 | `walking_deps` | Iterating `## Dependencies` entries; may recurse into sub-SEEDs and external SEED URLs. |
-| `running_block` | Displaying a shell block from `## Dependencies` for user confirmation; executing on approval. Returns to `walking_deps` on success. |
+| `running_block` | Displaying a `## Dependencies` shell block or external non-SEED clone command for user confirmation; executing on approval. Returns to `walking_deps` on success. |
 | `verifying` | Running through `## Verify` prompts top-down. |
 | `terminal` | Install attempt complete. The terminal reason is defined in [[#^obj-terminal-reasons]]. Feedback dispatch (per [[#^act-feedback]]) is a post-terminal side effect — it observes the terminal reason but does not extend the state machine. |
 
@@ -177,7 +177,7 @@ The three legal terminal reasons for an install attempt. Used both by [[#^act-in
 | Reason | When |
 |---|---|
 | `success` | All `## Dependencies` confirmed and executed without error; all `## Verify` prompts returned the expected answer. |
-| `failure` | An invoked command exited non-zero: a shell block under `## Dependencies`, `git clone` in clone mode, a `## Verify` prompt that returned an unexpected answer, or a recursively-installed sub-SEED that terminated with `failure`. |
+| `failure` | An invoked command exited non-zero: a shell block or external non-SEED clone under `## Dependencies`, `git clone` in clone mode, a `## Verify` prompt that returned an unexpected answer, or a recursively-installed sub-SEED that terminated with `failure`. |
 | `aborted` | The install stopped before or during user gating, not from a command's exit code: the user denied confirmation on a `## Dependencies` shell block or a `## Verify` shell prompt, the target was invalid or `SEED.md` was unreadable, a required tool was missing so the agent could not attempt the step, or a recursively-installed sub-SEED terminated with `aborted`. |
 
 ## Actions
@@ -215,7 +215,7 @@ An agent installs a SEED at `<target>` by traversing the install state machine (
 3. **Phase 1 — recurse into every SEED dependency** under `## Dependencies` (sub-SEED wikilinks and external SEED URLs per [[#^obj-deps-external]]). Install each one first by repeating this procedure against it. Leaves-first: all transitive SEED deps complete before any root-level shell runs.
 4. **Phase 2 — execute every remaining `## Dependencies` entry** (shell blocks, external non-SEED clones, system requirements). Each shell block AND each external non-SEED clone command MUST be displayed in full and user-confirmed (`tier-2` per-block confirmation per [[#^obj-tier]]) before execution. System requirements are surfaced to the user (the SEED MAY provide commands but MUST NOT assume the agent can run them without confirmation).
 5. Run [[#^act-verify]] against the root SEED.
-6. Reach the `terminal` state ([[#^obj-install-states]]); emit a terminal reason from [[#^obj-terminal-reasons]] and dispatch the feedback report per [[#^act-feedback]] — `^act-feedback` owns the firing rules (root-only, clone-mode-only, consent, payload), including which terminal reasons report and which stay silent.
+6. Reach the `terminal` state ([[#^obj-install-states]]); emit a terminal reason from [[#^obj-terminal-reasons]] and dispatch the feedback report per [[#^act-feedback]] — `^act-feedback` owns the firing rules (root-only, clone-mode-only, consent, payload).
 
 Order: leaves-first, root-last (Phase 1 fully completes before Phase 2 starts).
 
