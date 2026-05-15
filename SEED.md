@@ -39,7 +39,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 
 ### Dependencies section
 
-- Procedural; lists everything that MUST exist before this SEED's `## Verify` passes, in install order. ^obj-deps
+- Procedural; lists everything that MUST exist before this SEED's `## Verify` passes. Executable order is owned by [[#^act-install]]; the section orders entries for authoring clarity. ^obj-deps
 - Within Dependencies, entries SHOULD be ordered: **hardware** first (GPU, RAM, disk), then **API** (keys, accounts, quotas), then **software** (OS, runtimes, packages). Sub-SEED wikilinks slot in by the category of what they install. ^obj-deps-order
 - Contains a mix of:
   - **Sub-SEED wikilinks** (`[[<child>/SEED#Purpose]]`) — for SEEDs in the same repo. Installed by walking the wikilink to the sub-folder. ^obj-deps-wikilink
@@ -135,7 +135,7 @@ The cross-cutting input points this convention standardizes:
 
 ## Actions
 
-The verbs performed BY the Objects above. Each entry's shape — definition, optional flowchart, normative checklist or table — is defined at [[#^obj-actions]].
+The verbs performed BY the Objects above. Each entry's shape — definition, normative checklist or table — is defined at [[#^obj-actions]].
 
 ### Folder is read
 
@@ -153,7 +153,7 @@ An agent authors a new SEED by interviewing the user one question at a time, dra
 1. Interview the user one question at a time, applying the tier model at [[#^obj-tier]]: purpose, hardware/API/software dependencies, named objects, observable actions, what "verified" looks like.
 2. Inspect the live system read-only to corroborate user answers. All shell MUST be displayed and user-confirmed per [[#SEED is trusted]]. Inspection probes MUST NOT dump raw secret values into the agent's tool output — once a secret enters the conversation context, no later redaction step can recall it. Forbidden examples: `env` / `printenv` without a specific var name, `cat` of credential files (`~/.ssh/*`, `~/.aws/credentials`, `~/.netrc`), `docker compose config` (resolves env values), `git remote -v` / `git config --get remote.*.url` (HTTPS remotes often carry `user:token@` userinfo), auth-token-print commands (`gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`). Use presence/name-only probes instead — `printenv VAR >/dev/null && echo set`, `test -f <path> && echo present`, `env | awk -F= '{print $1}'`, `git remote` (without `-v`). ^act-author-probes
 3. Draft `SEED.md` and `README.md` with the canonical structure (one `# Purpose` H1 plus the H2 grammar at [[#^seed-grammar]]). Present the draft for user approval before writing.
-4. On approval, `mkdir` the target path, run `git init`, write the files, then run the convention's three structural Verify prompts (from this repo's `SEED.md > ## Verify`) against the new tree — **before** the initial commit, so a verify failure does not leave a non-conforming commit in the new SEED's history. MAY shell out to `ref/verify.sh <new-seed-dir>` as the deterministic implementation.
+4. On approval, `mkdir` the target path, run `git init`, write the files, then run the convention's three structural Verify prompts (from this repo's `SEED.md > ## Verify`) against the new tree — **before** the initial commit, so a verify failure does not leave a non-conforming commit in the new SEED's history. MAY shell out to `bash <path-to-this-repo>/ref/verify.sh <new-seed-dir>` as the deterministic implementation (without the explicit target arg, `ref/verify.sh` verifies the convention repo itself, not the new tree).
 5. Once verify passes, create the initial commit. The agent MUST NOT push or create a remote repo; distribution is the user's choice.
 6. NEVER include literal secret values in the drafted SEED. Specifically: env vars matching `*_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD`, `*_URL`, `*_URI`, `*_CONNECTION_STRING`, `*_DSN`; URI userinfo (`scheme://user:password@host/...`); paths under `~/.ssh/`, `~/.aws/credentials`, `~/.config/gh/hosts.yml`, `~/.netrc`; anything matching `sk-...`, `ghp_...`, `xox[abp]-...`, AWS `AKIA.../ASIA...`, JWTs. The agent MAY describe the requirement ("requires `OPENAI_API_KEY` in env") but never the value; if a probe result contains a secret despite step 2's rule, redact it (last 3 chars: `sk-...xY7`) before presenting. ^act-author-secrets
 
@@ -167,9 +167,8 @@ An agent installs a SEED at `<target>` by resolving the target to `$REPO_ROOT`, 
 2. Read `<repo>/SEED.md`.
 3. **Phase 1 — recurse into every SEED dependency** under `## Dependencies` (sub-SEED wikilinks and external SEED URLs per [[#^obj-deps-external]]). Install each one first by repeating this procedure against it. Leaves-first: all transitive SEED deps complete before any root-level shell runs.
 4. **Phase 2 — execute every remaining `## Dependencies` entry** (shell blocks, external non-SEED clones, system requirements). Each shell block AND each external non-SEED clone command MUST be displayed in full and user-confirmed (`tier-2` per-block confirmation per [[#^obj-tier]]) before execution. System requirements are surfaced to the user (the SEED MAY provide commands but MUST NOT assume the agent can run them without confirmation).
-5. Answer each `## Verify` prompt; for any prompt that asks the agent to run shell, the same `tier-2` per-block confirmation gate ([[#^obj-tier]]) as step 4 applies.
-
-On exit at any of the steps above, the install reaches the `terminal` state with one of the terminal reasons (`success`, `failure`, or `aborted`). Dispatch the feedback report per [[#^act-feedback]] — `^act-feedback` owns the firing rules (root-only, clone-mode-only, consent, payload), including which terminal states report and which stay silent.
+5. Run [[#^act-verify]] against the root SEED.
+6. Reach a `terminal` state (`success`, `failure`, or `aborted`); dispatch the feedback report per [[#^act-feedback]] — `^act-feedback` owns the firing rules (root-only, clone-mode-only, consent, payload), including which terminal states report and which stay silent.
 
 Order: leaves-first, root-last (Phase 1 fully completes before Phase 2 starts).
 

@@ -25,13 +25,9 @@ The three input modes (clone / local / CWD) are defined in [[../../../SEED#^act-
 
 ## Procedure
 
-Once the SEED root is established, follow [[../../../SEED#^act-install]] literally — including the recursive walk of `## Dependencies` wikilinks and external SEED URLs (leaves-first), executing every shell block with user confirmation, then answering every `## Verify` prompt.
+Once the SEED root is established, follow [[../../../SEED#^act-install]] literally.
 
 The procedure is defined ONCE in SEED.md. Do not restate it here.
-
-## Feedback dispatch
-
-After reaching a terminal state (`success`, `failure`, or `aborted`), evaluate [[../../../SEED#^act-feedback]] against the root SEED's `## Feedback` section. The trigger rules (one report per install, root-only, clone-mode-only, consent banner, payload schema, disable mechanisms) all live in that parent contract.
 
 ## Failure surface
 
