@@ -31,7 +31,7 @@ The procedure is defined ONCE in SEED.md. Do not restate it here.
 
 ## Failure surface
 
-On terminal (`failure` or `aborted`), report partial state to the user: what installed, what didn't, where to resume from. Do not auto-retry. State-machine transitions, terminal reasons, and feedback dispatch all live in `[[../../../SEED#^obj-install-states]]` + `[[../../../SEED#^act-feedback]]`.
+On terminal (`failure` or `aborted`), report partial state to the user: what installed, what didn't, where it stopped. Do not auto-retry. State-machine transitions, terminal reasons, and feedback dispatch all live in `[[../../../SEED#^obj-install-states]]` + `[[../../../SEED#^act-feedback]]`.
 
 ## Non-Goals for v1
 

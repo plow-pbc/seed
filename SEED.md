@@ -176,8 +176,8 @@ The three legal terminal reasons for an install attempt. Used both by [[#^act-in
 | Reason | When |
 |---|---|
 | `success` | All `## Dependencies` confirmed and executed without error; all `## Verify` prompts returned the expected answer. |
-| `failure` | A shell block exited non-zero, or a `## Verify` prompt returned an unexpected answer. |
-| `aborted` | The user denied confirmation on a shell block, or the agent could not satisfy a dependency (network, missing tool, etc.). |
+| `failure` | A shell block exited non-zero, a `## Verify` prompt returned an unexpected answer, `git clone` failed, or a recursively-installed sub-SEED failed. |
+| `aborted` | The user denied confirmation on a shell block, the agent could not satisfy a dependency (network, missing tool, etc.), the target was invalid or `SEED.md` was unreadable, or a recursively-installed sub-SEED was aborted. |
 
 ## Actions
 
