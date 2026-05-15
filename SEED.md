@@ -134,6 +134,51 @@ The cross-cutting input points this convention standardizes:
 - An OPTIONAL Claude skill folder providing the reference implementation of [[#^act-install]]. The folder is itself a sub-SEED — see [[ref/skills/seed-install/SEED#Purpose]]. ^obj-skill-install
 - Contains `SKILL.md`, which delegates to the natural-language contract in `## Actions > SEED is installed` rather than restating it; a local `README.md` and `SEED.md` per the sub-SEED pattern.
 
+### Install state machine ^obj-install-states
+
+The states an install attempt passes through. The agent SHOULD track its current state for diagnostics, and MUST emit exactly one terminal reason on exit (see [[#^obj-terminal-reasons]]).
+
+```mermaid
+stateDiagram-v2
+    [*] --> received
+    received --> cloning: clone mode
+    received --> walking_deps: local / cwd mode
+    received --> terminal: aborted
+    cloning --> walking_deps: clone OK
+    cloning --> terminal: failure
+    walking_deps --> running_block: shell block
+    walking_deps --> walking_deps: sub-SEED / external URL (recurse)
+    walking_deps --> verifying: deps done
+    walking_deps --> terminal: failure
+    walking_deps --> terminal: aborted
+    running_block --> walking_deps: block OK
+    running_block --> terminal: failure
+    running_block --> terminal: aborted
+    verifying --> verifying: next prompt
+    verifying --> terminal: failure
+    verifying --> terminal: success
+    terminal --> [*]
+```
+
+| State | Description |
+|---|---|
+| `received` | Target parsed; input mode determined (`clone` / `local` / `cwd`) per [[#^act-install-modes]]. |
+| `cloning` | Clone-mode only: `git clone` in progress. Skipped in local / cwd modes. |
+| `walking_deps` | Iterating `## Dependencies` entries; may recurse into sub-SEEDs and external SEED URLs. |
+| `running_block` | Displaying a shell block from `## Dependencies` for user confirmation; executing on approval. Returns to `walking_deps` on success. |
+| `verifying` | Running through `## Verify` prompts top-down. |
+| `terminal` | Install attempt complete. The terminal reason is one of `success`, `failure`, or `aborted` (see [[#^obj-terminal-reasons]]). Feedback dispatch (per [[#^act-feedback]]) is a post-terminal side effect — it observes the terminal reason but does not extend the state machine. |
+
+### Terminal reasons ^obj-terminal-reasons
+
+The three legal terminal reasons for an install attempt. Used both by [[#^act-install]]'s exit and by [[#^act-feedback]]'s `outcome` payload field — same vocabulary, one source.
+
+| Reason | When |
+|---|---|
+| `success` | All `## Dependencies` confirmed and executed without error; all `## Verify` prompts returned the expected answer. |
+| `failure` | A shell block exited non-zero, or a `## Verify` prompt returned an unexpected answer. |
+| `aborted` | The user denied confirmation on a shell block, or the agent could not satisfy a dependency (network, missing tool, etc.). |
+
 ## Actions
 
 The verbs performed BY the Objects above. Each entry's shape — definition, normative checklist or table — is defined at [[#^obj-actions]].
@@ -162,14 +207,14 @@ A SEED authored this way is structurally indistinguishable from one written by h
 
 ### SEED is installed
 
-An agent installs a SEED at `<target>` by resolving the target to `$REPO_ROOT`, walking `## Dependencies` recursively leaves-first with per-block user confirmation, then answering `## Verify`. ^act-install
+An agent installs a SEED at `<target>` by traversing the install state machine ([[#^obj-install-states]]) — resolving the target to `$REPO_ROOT`, walking `## Dependencies` recursively leaves-first with per-block user confirmation, then answering `## Verify`. On exit, the agent MUST emit exactly one terminal reason from [[#^obj-terminal-reasons]]; the same enum is the `outcome` field on the feedback payload, so install termination and feedback dispatch share one vocabulary. ^act-install
 
 1. Resolve `<target>` to a `$REPO_ROOT` on disk (see input modes below).
 2. Read `<repo>/SEED.md`.
 3. **Phase 1 — recurse into every SEED dependency** under `## Dependencies` (sub-SEED wikilinks and external SEED URLs per [[#^obj-deps-external]]). Install each one first by repeating this procedure against it. Leaves-first: all transitive SEED deps complete before any root-level shell runs.
 4. **Phase 2 — execute every remaining `## Dependencies` entry** (shell blocks, external non-SEED clones, system requirements). Each shell block AND each external non-SEED clone command MUST be displayed in full and user-confirmed (`tier-2` per-block confirmation per [[#^obj-tier]]) before execution. System requirements are surfaced to the user (the SEED MAY provide commands but MUST NOT assume the agent can run them without confirmation).
 5. Run [[#^act-verify]] against the root SEED.
-6. Reach a `terminal` state (`success`, `failure`, or `aborted`); dispatch the feedback report per [[#^act-feedback]] — `^act-feedback` owns the firing rules (root-only, clone-mode-only, consent, payload), including which terminal states report and which stay silent.
+6. Reach the `terminal` state ([[#^obj-install-states]]); emit a terminal reason from [[#^obj-terminal-reasons]] and dispatch the feedback report per [[#^act-feedback]] — `^act-feedback` owns the firing rules (root-only, clone-mode-only, consent, payload), including which terminal reasons report and which stay silent.
 
 Order: leaves-first, root-last (Phase 1 fully completes before Phase 2 starts).
 
@@ -209,7 +254,7 @@ The agent dispatches at most one feedback report per install attempt. ^act-feedb
 
 #### Trigger
 
-- Fires exactly once per install attempt that reaches a terminal state (`success`, `failure`, or `aborted`).
+- Fires exactly once per install attempt that reaches the `terminal` state ([[#^obj-install-states]]); the report's `outcome` field is the terminal reason ([[#^obj-terminal-reasons]]).
 - Fires only for the **root** SEED of the install — the one the user passed to `Install <target>`. Transitively-installed sub-SEEDs are silent in v0.
 - Fires only in **clone mode** (see [[#^act-install-modes]]) — the `seed_url` payload field requires a canonical git URL, which only exists when the user passed a git URL. Local mode and CWD mode skip feedback entirely; reporting a local path would either leak PII or violate the payload contract.
 - The agent MUST NOT fire if the root SEED's `## Feedback` section is absent or its body is `(none)`.
@@ -234,6 +279,7 @@ Reading the root SEED's `## Feedback` body (whitespace-trimmed):
 #### Payload
 
 - A markdown document with YAML frontmatter, GitHub-issue-shaped. Exactly these fields, no body: `seed_url`, `seed_commit`, `outcome`, `failing_section`, `failing_block_index`, `exit_code`, `os`, `arch`, `anon_machine_id`, `ts`.
+- **`outcome`** MUST be one of the terminal reasons ([[#^obj-terminal-reasons]]).
 - **`seed_url`** MUST be the URL the install accepted in clone mode — by contract (`^act-install-clone-url`) that URL already has no userinfo, query, or fragment, so the payload value is the install URL verbatim (e.g., `https://github.com/foo/bar.git`).
 - **`anon_machine_id`** is the first 16 hex chars of `sha256(hostname + per_machine_salt)`. The salt is generated on first run and stored locally in `~/.config/seed/machine-id`; wiping it rotates the ID.
 - The agent MUST NOT collect or transmit: paths, env vars, hostnames, shell output, stack traces, free-form notes, IP addresses (beyond what HTTP unavoidably reveals), or any PII. v0 has **no free-form body** — rich failure context belongs in a GitHub issue against the SEED's repo, not the anonymous feedback report.
