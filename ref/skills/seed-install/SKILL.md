@@ -31,7 +31,7 @@ The procedure is defined ONCE in SEED.md. Do not restate it here.
 
 ## Failure surface
 
-On a non-success terminal reason ([[../../../SEED#^obj-terminal-reasons]]), report partial state to the user: what installed, what didn't, where it stopped. Do not auto-retry.
+On a non-success terminal reason ([[../../../SEED#^obj-terminal-reasons]]), report partial state to the user: what installed, what didn't, where it stopped.
 
 ## Non-Goals for v1
 

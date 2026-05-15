@@ -136,7 +136,7 @@ The cross-cutting input points this convention standardizes:
 
 ### Install state machine ^obj-install-states
 
-The states an install attempt passes through. The agent SHOULD track its current state for diagnostics, and MUST emit exactly one terminal reason on exit (see [[#^obj-terminal-reasons]]).
+The states an install attempt passes through. The agent SHOULD track its current state for diagnostics. The exit requirement (emit one terminal reason) lives in [[#^act-install]] step 6.
 
 ```mermaid
 stateDiagram-v2
