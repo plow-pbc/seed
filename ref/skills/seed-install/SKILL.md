@@ -31,12 +31,7 @@ The procedure is defined ONCE in SEED.md. Do not restate it here.
 
 ## Failure surface
 
-On any user-aborted shell block:
-
-1. Stop the walk immediately.
-2. Mark the install `aborted`.
-3. Fire the feedback report if eligible.
-4. Report partial state to the user: what installed, what didn't, where to resume from. Do not auto-retry.
+On a non-success terminal reason ([[../../../SEED#^obj-terminal-reasons]]), report partial state to the user: what installed, what didn't, where it stopped.
 
 ## Non-Goals for v1
 
