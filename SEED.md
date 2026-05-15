@@ -67,7 +67,7 @@ The convention's named entities — the things that exist when a SEED-conforming
 ### Verify section
 
 - Assertional; read-only checks that the install worked. ^obj-verify
-- Verify is a sequence of natural-language prompts the agent reads and follows. The prompts are normative; an OPTIONAL `ref/verify.sh` (see [[#ref/]]) MAY provide a deterministic bash implementation of the same prompts for CI / non-AI callers.
+- Verify is a sequence of natural-language prompts the agent reads and follows. The prompts are normative; an OPTIONAL `ref/verify.sh` (see [[#^obj-ref]]) MAY provide a deterministic bash implementation of the same prompts for CI / non-AI callers.
 - Verify is **normatively read-only on installed state** — an authoring contract: the SEED author MUST NOT put state-mutating instructions here.
 - MAY direct the agent to create ephemeral test resources (containers, sandboxes, digital twins); MUST direct cleanup before exit.
 - If a Verify prompt asks the agent to run shell, the `tier-2` gate at [[#^obj-tier]] applies — same as `## Dependencies`. The read-only guarantee is an authoring contract, not something the agent can prove from the source.
@@ -80,7 +80,7 @@ The convention's named entities — the things that exist when a SEED-conforming
   - `(default)` — agent uses plow's default endpoint (`https://plow.io/seed/feedback` until otherwise specified). The body is intentionally a single compact token so authors and generators don't have to match a prose sentence byte-for-byte. ^obj-feedback-default
   - `(none)` — feedback explicitly disabled for this SEED. ^obj-feedback-none
 - **Absent `## Feedback` means feedback is OFF for this SEED.** No reports are sent. Authors who want feedback MUST add an explicit `## Feedback` section with one of the two legal body forms. (Privacy-by-default: a SEED predating this convention does not silently become a reporting SEED when an agent rolls forward.)
-- The agent's runtime behavior when this section is present is specified in [[#Feedback is reported]] under `## Actions`.
+- The agent's runtime behavior when this section is present is specified in [[#^act-feedback]] under `## Actions`.
 
 ### Wikilinks
 
@@ -121,17 +121,18 @@ The cross-cutting input points this convention standardizes:
 - An OPTIONAL sub-folder at the repo root holding reference code for the SEED's runnable artifacts. ^obj-ref
 - When a SEED ships reference code (a verify script, a hook, a populate script, etc.), it MUST live in `ref/`. The parent SEED's `## Objects` H3 entries describe the artifacts in prose; `## Actions` describes what each does.
 - `ref/` itself does NOT require its own `SEED.md` — it's a code-holding folder, not a sub-SEED. The natural-language contract for the artifact lives in the parent SEED; the code inside `ref/` is one realization of that contract.
+- A folder INSIDE `ref/` (e.g., `ref/skills/<skill-name>/`) MAY be its own sub-SEED if it has structured contents worth declaring as Objects (named entities) and Verify (structural invariants). The parent SEED's `## Actions` remains the source of truth for the contract; a sub-SEED inside `ref/` describes the realization's own structure without restating the parent. See `^obj-skill-create` and `^obj-skill-install` for examples.
 - Alternative full implementations (a different language, a richer toolkit) live in separate repos, linked from `## Open` or wherever appropriate.
 
 ### ref/skills/seed-create/
 
-- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is authored]]. ^obj-skill-create
-- Contains `SKILL.md` (interview-driven authoring flow) and any supporting files.
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#^act-author]]. The folder is itself a sub-SEED — see [[ref/skills/seed-create/SEED#Purpose]]. ^obj-skill-create
+- Contains `SKILL.md` (the agent entry point), a local `README.md` (the skill's purpose), a local `SEED.md` (the skill's structural declaration), and any supporting files.
 
 ### ref/skills/seed-install/
 
-- An OPTIONAL Claude skill folder providing the reference implementation of [[#SEED is installed]]. ^obj-skill-install
-- Contains `SKILL.md`, which delegates to the natural-language contract in `## Actions > SEED is installed` rather than restating it.
+- An OPTIONAL Claude skill folder providing the reference implementation of [[#^act-install]]. The folder is itself a sub-SEED — see [[ref/skills/seed-install/SEED#Purpose]]. ^obj-skill-install
+- Contains `SKILL.md`, which delegates to the natural-language contract in `## Actions > SEED is installed` rather than restating it; a local `README.md` and `SEED.md` per the sub-SEED pattern.
 
 ## Actions
 
@@ -151,7 +152,7 @@ An agent (human or AI) absorbs a SEED-participating folder by reading its `SEED.
 An agent authors a new SEED by interviewing the user one question at a time, drafting both files in memory, getting explicit approval, then writing-verifying-committing in the new tree. ^act-author
 
 1. Interview the user one question at a time, applying the tier model at [[#^obj-tier]]: purpose, hardware/API/software dependencies, named objects, observable actions, what "verified" looks like.
-2. Inspect the live system read-only to corroborate user answers. All shell MUST be displayed and user-confirmed per [[#SEED is trusted]]. Inspection probes MUST NOT dump raw secret values into the agent's tool output — once a secret enters the conversation context, no later redaction step can recall it. Forbidden examples: `env` / `printenv` without a specific var name, `cat` of credential files (`~/.ssh/*`, `~/.aws/credentials`, `~/.netrc`), `docker compose config` (resolves env values), `git remote -v` / `git config --get remote.*.url` (HTTPS remotes often carry `user:token@` userinfo), auth-token-print commands (`gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`). Use presence/name-only probes instead — `printenv VAR >/dev/null && echo set`, `test -f <path> && echo present`, `env | awk -F= '{print $1}'`, `git remote` (without `-v`). ^act-author-probes
+2. Inspect the live system read-only to corroborate user answers. All shell MUST be displayed and user-confirmed per [[#^act-trust]]. Inspection probes MUST NOT dump raw secret values into the agent's tool output — once a secret enters the conversation context, no later redaction step can recall it. Forbidden examples: `env` / `printenv` without a specific var name, `cat` of credential files (`~/.ssh/*`, `~/.aws/credentials`, `~/.netrc`), `docker compose config` (resolves env values), `git remote -v` / `git config --get remote.*.url` (HTTPS remotes often carry `user:token@` userinfo), auth-token-print commands (`gh auth token`, `aws sts get-session-token`, `gcloud auth print-access-token`). Use presence/name-only probes instead — `printenv VAR >/dev/null && echo set`, `test -f <path> && echo present`, `env | awk -F= '{print $1}'`, `git remote` (without `-v`). ^act-author-probes
 3. Draft `SEED.md` and `README.md` with the canonical structure (one `# Purpose` H1 plus the H2 grammar at [[#^seed-grammar]]). Present the draft for user approval before writing.
 4. On approval, `mkdir` the target path, run `git init`, write the files, then run the convention's three structural Verify prompts (from this repo's `SEED.md > ## Verify`) against the new tree — **before** the initial commit, so a verify failure does not leave a non-conforming commit in the new SEED's history. MAY shell out to `bash <path-to-this-repo>/ref/verify.sh <new-seed-dir>` as the deterministic implementation (without the explicit target arg, `ref/verify.sh` verifies the convention repo itself, not the new tree).
 5. Once verify passes, create the initial commit. The agent MUST NOT push or create a remote repo; distribution is the user's choice.
@@ -187,7 +188,7 @@ An agent answers every natural-language prompt under `## Verify`; all MUST retur
 1. Read each prompt under `## Verify` top-down.
 2. For any prompt that asks the agent to run shell, display the shell in full and confirm before executing (`tier-2` per-block confirmation per [[#^obj-tier]]). Same gate as `## Dependencies` — Verify is normatively read-only as an authoring contract, but the agent cannot prove that from the source.
 3. Answer each prompt; all MUST return the expected answer.
-4. For CI or non-AI callers, the SEED MAY ship `ref/verify.sh` (see [[#ref/]]) as a deterministic bash implementation of the same prompts.
+4. For CI or non-AI callers, the SEED MAY ship `ref/verify.sh` (see [[#^obj-ref]]) as a deterministic bash implementation of the same prompts.
 
 ### SEED is trusted
 
